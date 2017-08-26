@@ -40,31 +40,34 @@ class config():
             self._basedir = os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
         else:
             self._basedir = os.path.dirname(__file__)
+
         self._homedir = os.path.expanduser('~')
+
         self._configdir = os.path.join(self._homedir, '.openhri')
         if os.path.exists(self._configdir) == False:
             os.makedirs(self._configdir)
-#
-#
-#
+
         self._lexicondb = os.path.join(self._configdir, 'lexcon.db')
 
         self.julius(os.path.join(self._basedir, "3rdparty") )
         self.openjtalk(os.path.join(self._basedir, "3rdparty") )
         self.festival(os.path.join(self._basedir, "3rdparty") )
 
+    #
+    #  For Julius
+    #
     def julius(self, basedir):
         if self._platform == "Windows":
-            self._julius_runkitdir = os.path.join(basedir, "dictation-kit-v4.0-win")
-            self._julius_voxforgedir = os.path.join(basedir, "julius-voxforge-build726")
+            self._julius_runkitdir = os.path.join(basedir, "dictation-kit-v4.4")
+            self._julius_voxforgedir = os.path.join(basedir, "Julius_AcousticModels_16kHz-16bit_MFCC_O_D_(0_1_1-build726)")
 
-            self._julius_bin = os.path.join(self._julius_runkitdir, "bin", "julius.exe")
+            self._julius_bin = os.path.join(self._julius_runkitdir, "bin", "windows", "julius.exe")
+
             self._julius_hmm_en = os.path.join(self._julius_voxforgedir, "hmmdefs")
             self._julius_hlist_en = os.path.join(self._julius_voxforgedir, "tiedlist")
             self._julius_dict_en = os.path.join(self._julius_voxforgedir, "dict")
+
         else:
-	#harumi 2015_01_14 change with 3rdparty setting
-        #       2015_02_03 change with julius-voxforge package.
 	    self._julius_runkitdir = "/usr/local/share/julius-runkit"
             if ubuntu_osname == "precise":
                 self._julius_dict_en = "/usr/share/doc/julius-voxforge/dict.gz"
@@ -78,11 +81,14 @@ class config():
             self._julius_hmm_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "hmmdefs")
             self._julius_hlist_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "tiedlist")
 
-        self._julius_hmm_ja   = os.path.join(self._julius_runkitdir, "model", "phone_m", "hmmdefs_ptm_gid.binhmm")
+        self._julius_hmm_ja   = os.path.join(self._julius_runkitdir, "model", "phone_m", "jnas-mono-16mix-gid.binhmm")
         self._julius_hlist_ja = os.path.join(self._julius_runkitdir, "model", "phone_m", "logicalTri")
-        self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "web.60k.8-8.bingramv5.gz")
-        self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "web.60k.htkdic")
+        self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
+        self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
 
+    #
+    #   For OpenJTalk
+    #
     def openjtalk(self, basedir):
         if self._platform == "Windows":
             self._openjtalk_dir = os.path.join(basedir, "open_jtalk-1.10")
@@ -105,12 +111,21 @@ class config():
             self._openjtalk_phonemodel_female_ja = "/usr/local/lib/mmdagent/voice/mei_normal"
             self._openjtalk_bin = "open_jtalk"
 
+            self.sox(basedir)
+
+    #
+    #  For SOX
+    #
+    def sox(self, basedir):
         if self._platform == "Windows":
             self._soxdir = os.path.join(basedir, "sox-14.4.2")
             self._sox_bin = os.path.join(self._soxdir, "sox.exe")
         else:
             self._sox_bin = "sox"
 
+    #
+    #  For Festival
+    #
     def festival(self, basedir):
         if self._platform == "Windows":
             #harumi 2014_12_04 change with a change in the folder structure of festival.

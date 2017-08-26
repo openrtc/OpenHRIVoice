@@ -1,0 +1,4 @@
+VoxForge English Acoustic Model for HTK/Juilus
+(http://www.voxforge.org/)
+Copyright (c) 2005-2009 Ken MacLean <contact@voxforge.org>
+Copyright (c) 2005-2009 Free Software Foundation
