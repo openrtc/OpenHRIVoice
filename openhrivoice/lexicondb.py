@@ -19,11 +19,17 @@ from openhrivoice.config import config
 from openhrivoice.parsejuliusdict import *
 from openhrivoice.parsevoxforgedict import *
 
+#
+#
+#
 class LexiconDB:
     ''' Utility class to store pronunciation dictionary to database'''
     
-    def __init__(self, fname, version):
+    def __init__(self, fname, version, prop=None):
         self._config = config()
+        if prop :
+            self.config.julius(prop)
+
         self._db = sqlite3.connect(fname)
         createtable = False
 

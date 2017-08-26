@@ -16,6 +16,9 @@ http://www.opensource.org/licenses/eclipse-1.0.txt
 import re
 import gzip
 
+#
+#
+#
 class VoxforgeDict:
     """ Utility class to parse Voxforge Pronunciation Dictionaly."""
 

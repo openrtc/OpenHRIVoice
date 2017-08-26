@@ -20,23 +20,35 @@ from openhrivoice.__init__ import __version__
 from openhrivoice.config import config
 from openhrivoice.lexicondb import *
 
+#
+#
+#
 def isempty(node):
     if node.nodeName == '#text':
         if node.data.strip('\n ') == '':
             return True
     return False
 
+#
+#
+#
 class nulltransform:
     def convert(self, text):
         return text
 
+#
+#
+#
 class PLS:
     """ Utility class to parse W3C Pronunciation Lexicon Specification."""
-
+    #
+    #
     def __init__(self):
         self._dict = {}
         self._alphabet = {}
 
+    #
+    #
     def parse(self, files):
         grapheme = []
         phoneme = []
@@ -79,11 +91,18 @@ class PLS:
             print e
         return self
 
+#
+#
+#
 class SRGSItem:
+    #
+    #
     def __init__(self):
         self._type = None
         self._items = None
 
+    #
+    #
     def parse(self, node):
         self._type = node.tag.replace('{http://www.w3.org/2001/06/grammar}', '')
         if self._type == "item":
@@ -118,20 +137,31 @@ class SRGSItem:
             self._tag = node.text
         return self
 
+#
+#
+#
 class SRGSRule:
+    #
+    #
     def __init__(self):
         self._id = None
         self._items = []
-
+    #
+    #
     def parse(self, node):
         self._id = node.get('id')
         self._items = [SRGSItem().parse(c) for c in node.getchildren() if type(c) is not etree._Comment]
         return self
 
+#
+#
+#
 class SRGS:
     """ Utility class to parse W3C Speech Recognition Grammar Specification."""
-
-    def __init__(self, file):
+    #
+    #
+    #
+    def __init__(self, file, prop=None):
         self._config = config()
         self._filename = file
         self._rules = {}
@@ -139,6 +169,8 @@ class SRGS:
         self._rootrule = None
         self._lex = None
         self._node = None
+        if prop :
+            self._config.julius(prop)
         try:
             doc = etree.parse(file)
             doc.xinclude()
@@ -151,6 +183,9 @@ class SRGS:
             print e
         self.parse(self._node)
 
+    #
+    #
+    #
     def parse(self, node):
         self._lang = node.get("{http://www.w3.org/XML/1998/namespace}lang")
         lexnode = node.findall("{%s}lexicon" % (node.nsmap[None],))
@@ -162,6 +197,10 @@ class SRGS:
             self._rules[rr._id] = rr
         self._rootrule = node.get('root')
 
+
+    #
+    #
+    #
     def wordlist_recur(self, item, words):
         if item._type == "#text":
             words.extend(item._words)
@@ -176,6 +215,9 @@ class SRGS:
         elif item._type == "tag":
             pass
 
+    #
+    #
+    #
     def wordlist(self):
         words = []
         for r in self._rules.values():
@@ -183,6 +225,9 @@ class SRGS:
                 self.wordlist_recur(i, words)
         return words
 
+    #
+    #
+    #
     def toJulius_recur(self, item, dfa, startstate, endstate):
         if item._type == "#text":
             currentstate = startstate
@@ -253,7 +298,10 @@ class SRGS:
             self.toJulius_recur(root._items[-1], dfa, currentstate, endstate)
         elif item._type == "tag":
             pass
-    
+
+    #
+    #
+    #
     def toJulius(self, rootrule = None):
         if rootrule is None:
             root = self._rules[self._rootrule]
@@ -347,6 +395,9 @@ class SRGS:
 
         return str
 
+#
+#
+#
 class DFA:
     """ Utility class to manage DFA """
 
@@ -354,17 +405,25 @@ class DFA:
     ENDSTATE = 1
     EOA = -1 # End Of Automaton
     
+    #
+    #
     def __init__(self):
         self._dfa = list()
         self._totalstate = 2
 
+    #
+    #
     def newstate(self):
         self._totalstate += 1
         return self._totalstate - 1
     
+    #
+    #
     def append(self, value):
         self._dfa.append(value)
-        
+    
+    #
+    #
     def reverse(self): # convert dfa into reverse order
         newdfa = list()
         for v in self._dfa:
@@ -379,6 +438,8 @@ class DFA:
             newdfa.append((tostate, v[1], fromstate))
         return newdfa
 
+#
+#
 def _test():
     import doctest
     doctest.testmod()
