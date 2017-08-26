@@ -71,7 +71,7 @@ class JuliusWrap(threading.Thread):
         if rtc :
             prop = rtc._properties
             if prop.getProperty("julius.3rdparty_dir") :
-                self._conf.julius(prop.getProperty("julius.3rdparty_dir"))
+                self._config.julius(prop.getProperty("julius.3rdparty_dir"))
 
         self._cmdline = []
         self._cmdline.append(self._config._julius_bin)
