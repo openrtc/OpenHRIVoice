@@ -16,8 +16,8 @@ http://www.opensource.org/licenses/eclipse-1.0.txt
 import sqlite3
 from openhrivoice.__init__ import __version__
 from openhrivoice.config import config
-from openhrivoice.parsejuliusdict import *
-from openhrivoice.parsevoxforgedict import *
+from openhrivoice.JuliusRTC.parsejuliusdict import *
+from openhrivoice.JuliusRTC.parsevoxforgedict import *
 
 #
 #
@@ -28,7 +28,8 @@ class LexiconDB:
     def __init__(self, fname, version, prop=None):
         self._config = config()
         if prop :
-            self.config.julius(prop)
+            if prop.getProperty("julius.3rdparty_dir") :
+                self._config.julius(prop.getProperty("julius.3rdparty_dir"))
 
         self._db = sqlite3.connect(fname)
         createtable = False

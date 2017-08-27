@@ -26,7 +26,7 @@ import optparse
 from glob import glob
 from BeautifulSoup import BeautifulSoup
 from xml.dom.minidom import Document
-from openhrivoice.parsesrgs import *
+from openhrivoice.JuliusRTC.parsesrgs import *
 import OpenRTM_aist
 import RTC
 from openhrivoice.__init__ import __version__
@@ -80,24 +80,24 @@ class JuliusWrap(threading.Thread):
         if self._lang in ('ja', 'jp'):
             self._cmdline.extend(['-h',  self._config._julius_hmm_ja])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_ja])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "dummy.dfa")])
-            self._cmdline.extend(["-v" , os.path.join(self._config._basedir, "dummy.dict")])
+            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy.dfa")])
+            self._cmdline.extend(["-v" , os.path.join(self._config._basedir, "JuliusRTC", "dummy.dict")])
             self._cmdline.extend(["-sb", "80.0"])
         #
         #  Germany
         elif self._lang == 'de':
             self._cmdline.extend(['-h',  self._config._julius_hmm_de])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_de])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "dummy-en.dfa")])
-            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "dummy-en.dict")])
+            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
+            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
             self._cmdline.extend(["-sb", "160.0"])
         #
         #  English
         else:
             self._cmdline.extend(['-h',  self._config._julius_hmm_en])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_en])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "dummy-en.dfa")])
-            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "dummy-en.dict")])
+            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
+            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
             self._cmdline.extend(["-sb", "160.0"])
 
         self._audioport = self.getunusedport()

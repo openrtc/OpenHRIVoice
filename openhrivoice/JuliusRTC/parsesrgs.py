@@ -18,7 +18,7 @@ from lxml import etree
 from StringIO import StringIO
 from openhrivoice.__init__ import __version__
 from openhrivoice.config import config
-from openhrivoice.lexicondb import *
+from openhrivoice.JuliusRTC.lexicondb import *
 
 #
 #
@@ -170,7 +170,9 @@ class SRGS:
         self._lex = None
         self._node = None
         if prop :
-            self._config.julius(prop)
+            if prop.getProperty("julius.3rdparty_dir") :
+                self._config.julius(prop.getProperty("julius.3rdparty_dir"))
+
         try:
             doc = etree.parse(file)
             doc.xinclude()
@@ -329,14 +331,14 @@ class SRGS:
         if self._lang in ('jp', 'ja'):
             dict['<s>'] = ('silB',)
             dict['</s>'] = ('silE',)
-            from openhrivoice.hiragana2phoneme import hiragana2phoneme
+            from openhrivoice.JuliusRTC.hiragana2phoneme import hiragana2phoneme
             conv = hiragana2phoneme()
-            from openhrivoice.katakana2hiragana import katakana2hiragana
+            from openhrivoice.JuliusRTC.katakana2hiragana import katakana2hiragana
             conv2 = katakana2hiragana()
         elif self._lang == 'de':
             dict['<s>'] = ('sil',)
             dict['</s>'] = ('sil',)
-            from openhrivoice.sampa2simon import ipa2simon
+            from openhrivoice.JuliusRTC.sampa2simon import ipa2simon
             conv = ipa2simon()
         else:
             dict['<s>'] = ('sil',)
