@@ -37,7 +37,7 @@ import RTC
 from openhrivoice.__init__ import __version__
 from openhrivoice import utils
 from openhrivoice.config import config
-from openhrivoice.parseopenjtalk import parseopenjtalk
+from openhrivoice.OpenJTalkRTC.parseopenjtalk import parseopenjtalk
 from openhrivoice.VoiceSynthComponentBase import *
 try:
     import gettext

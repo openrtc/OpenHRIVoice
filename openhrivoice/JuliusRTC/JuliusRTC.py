@@ -65,6 +65,7 @@ class JuliusWrap(threading.Thread):
         self._firstgrammar = True
         self._activegrammars = {}
         self._prevdata = ''
+
         self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -413,8 +414,10 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._j = JuliusWrap(self._lang, self)
         self._j.start()
         self._j.setcallback(self.onResult)
+
         while self._j._gotinput == False:
             time.sleep(0.1)
+
         for r in self._srgs._rules.keys():
             gram = self._srgs.toJulius(r)
             if gram == "":
@@ -518,6 +521,15 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     def setgrammar(self, srgs):
         self._srgs = srgs
 
+    #
+    #  Set Grammer
+    #
+    def setgrammarfile(self, gram):
+        self._grammer = gram
+        print "compiling grammar: %s" % (gram,)
+        self._srgs = SRGS(gram, self._properties)
+        print "done"
+
 #
 #  JuliusRTCManager Class
 #
@@ -569,12 +581,14 @@ class JuliusRTCManager:
     def moduleInit(self, manager):
         profile = OpenRTM_aist.Properties(defaults_str = JuliusRTC_spec)
         manager.registerFactory(profile, JuliusRTC, OpenRTM_aist.Delete)
+  
         for a in self._grammars:
-            print "compiling grammar: %s" % (a,)
-            srgs = SRGS(a)
-            print "done"
+#            print "compiling grammar: %s" % (a,)
+#            srgs = SRGS(a)
+#            print "done"
             self._comp[a] = manager.createComponent("JuliusRTC?exec_cxt.periodic.rate=1")
-            self._comp[a].setgrammar(srgs)
+#            self._comp[a].setgrammar(srgs)
+            self._comp[a].setgrammarfile(a)
 
 #
 #  Main
