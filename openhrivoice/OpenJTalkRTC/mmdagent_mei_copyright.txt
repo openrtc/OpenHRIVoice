@@ -1,4 +1,0 @@
-HTS Voice "Mei (Normal)"
-released by MMDAgent Project Team (http://www.mmdagent.jp/)
-Copyright (C) 2009-2011  Nagoya Institute of Technology
-Some rights reserved.

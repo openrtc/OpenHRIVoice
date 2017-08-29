@@ -157,7 +157,6 @@ class OpenJTalkWrap(VoiceSynthBase):
         # normally openjtalk outputs 48000Hz sound.
         wavfile2 = self.gettempname()
         cmdarg = [self._conf._sox_bin, "-t", "wav", wavfile, "-r", str(samplerate), "-t", "wav", wavfile2]
-        print cmdarg
         p = subprocess.Popen(cmdarg)
         p.wait()
 
