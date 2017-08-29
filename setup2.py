@@ -27,11 +27,19 @@ if sys.platform == "win32":
     extra = {
         "console": [
                     "openhrivoice/OpenJTalkRTC/OpenJTalkRTC.py",
+                    "openhrivoice/JuliusRTC/JuliusRTC.py",
                     ],
         "options": {
             "py2exe": {
                 "includes": ["xml.etree.ElementTree", "lxml._elementpath", "OpenRTM_aist", "RTC"],
-                "dll_excludes": ["USP10.dll", "NSI.dll", "MSIMG32.dll", "DNSAPI.dll", "ierutil.dll", "powrprof.dll", "msimg32.dll", "mpr.dll", "urlmon.dll", "dnsapi.dll"],
+                "dll_excludes": ["USP10.dll", "NSI.dll", "MSIMG32.dll", 
+                                 "DNSAPI.dll", "ierutil.dll", "powrprof.dll",
+                                  "msimg32.dll", "mpr.dll", "urlmon.dll", "dnsapi.dll",
+                                  "OLEAUT32.dll", "USER32.dll", "IMM32.dll", "SHELL32.dll",
+                                  "OLE32.dll", "SHLWAPI.dll", "MSVCR100.dll", "COMCTL32.dll",
+                                  "ADVAPI32.dll", "msvcrt.dll", "WS2_32.dll", "WINSPOOL.drv",
+                                  "GDI32.dll", "KERNEL32.dll", "COMDLG32.dll", "gdiplus.dll",
+                                ],
             }
         }
         }
@@ -60,6 +68,7 @@ setup(name='openhrivoice',
       entry_points="""
       [console_scripts]
       openjtalkrtc = openhrivoice.OpenJTalkRTC.OpenJTalkRTC:main
+      juliusrtc = openhrivoice.JuliusRTC.JuliusRTC:main
       """,
       **extra
       )

@@ -1,2 +1,5 @@
 
 openhrivoice/3rdparty
+build
+dist
+openhrivoice.egg-info

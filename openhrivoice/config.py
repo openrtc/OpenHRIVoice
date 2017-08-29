@@ -52,7 +52,6 @@ class config():
         self.julius(os.path.join(self._basedir, "3rdparty") )
         self.openjtalk(os.path.join(self._basedir, "3rdparty") )
         self.festival(os.path.join(self._basedir, "3rdparty") )
-
     #
     #  For Julius
     #
@@ -111,7 +110,7 @@ class config():
             self._openjtalk_phonemodel_female_ja = "/usr/local/lib/mmdagent/voice/mei_normal"
             self._openjtalk_bin = "open_jtalk"
 
-            self.sox(basedir)
+        self.sox(basedir)
 
     #
     #  For SOX

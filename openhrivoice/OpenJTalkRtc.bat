@@ -7,6 +7,6 @@
 
 @echo on
 
-python OpenJTalkRTC\OpenJTalkRTC.py
+%PYTHON_BASE%\python OpenJTalkRTC\OpenJTalkRTC.py
 
 @set PATH=%PATH_ORG%
