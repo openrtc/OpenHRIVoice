@@ -85,6 +85,10 @@ class config():
         self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
         self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
         #self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "web.60k.htkdic")
+        #
+        # for dictation
+        self._julius_bingram_ja= os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
+        self._julius_htkdic_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
     #
     #   For OpenJTalk
     #

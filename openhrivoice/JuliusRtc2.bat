@@ -7,6 +7,6 @@
 
 @echo on
 
-@rem %PYTHON_BASE%\python JuliusRTC\JuliusRTC.py sample.grmml
-%PYTHON_BASE%\python JuliusRTC\JuliusRTC.py -D
+%PYTHON_BASE%\python JuliusRTC\JuliusRTC.py sample.grmml
+
 @set PATH=%PATH_ORG%

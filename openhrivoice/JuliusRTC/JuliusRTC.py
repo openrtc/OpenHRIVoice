@@ -66,67 +66,93 @@ class JuliusWrap(threading.Thread):
         self._activegrammars = {}
         self._prevdata = ''
 
+        self._mode = 'grammar'
+
         self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         if rtc :
+            self._mode = rtc._mode
             prop = rtc._properties
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
 
         self._cmdline = []
         self._cmdline.append(self._config._julius_bin)
+
+        ###########################################################
+        #  Opntion Setting
         #
-        #  Japanese
-        if self._lang in ('ja', 'jp'):
-            self._cmdline.extend(['-h',  self._config._julius_hmm_ja])
+        ###########################################################
+        if self._mode == 'dictation' :
+            self._cmdline.extend(['-d',     self._config._julius_bingram_ja])
+            self._cmdline.extend(['-v',     self._config._julius_htkdic_ja])
+            self._cmdline.extend(['-h',     self._config._julius_hmm_ja])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_ja])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy.dfa")])
-            self._cmdline.extend(["-v" , os.path.join(self._config._basedir, "JuliusRTC", "dummy.dict")])
-            self._cmdline.extend(["-sb", "80.0"])
-        #
-        #  Germany
-        elif self._lang == 'de':
-            self._cmdline.extend(['-h',  self._config._julius_hmm_de])
-            self._cmdline.extend(['-hlist', self._config._julius_hlist_de])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
-            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
-            self._cmdline.extend(["-sb", "160.0"])
-        #
-        #  English
+            self._cmdline.extend(["-b", "1500", "-b2", "100", "-s", "500" ,"-m", "10000"])
+            #self._cmdline.extend(["-b", "-1", "-b2", "120", "-s", "1000" ,"-m", "2000"])
+            self._cmdline.extend(["-n", "30", "-output", "1", "-zmeanframe", "-rejectshort" ,"800", "-lmp", '10.0' ,'0', '-lmp2', '10', '0'])
+            #self._cmdline.extend(["-n", "30", "-output", "1", "-zmeanframe", "-rejectshort" ,"800"])
+
         else:
-            self._cmdline.extend(['-h',  self._config._julius_hmm_en])
-            self._cmdline.extend(['-hlist', self._config._julius_hlist_en])
-            self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
-            self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
-            self._cmdline.extend(["-sb", "160.0"])
+            #
+            #  Japanese
+            if self._lang in ('ja', 'jp'):
+                self._cmdline.extend(['-h',  self._config._julius_hmm_ja])
+                self._cmdline.extend(['-hlist', self._config._julius_hlist_ja])
+                self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy.dfa")])
+                self._cmdline.extend(["-v" , os.path.join(self._config._basedir, "JuliusRTC", "dummy.dict")])
+                self._cmdline.extend(["-sb", "80.0"])
+            #
+            #  Germany
+            elif self._lang == 'de':
+                self._cmdline.extend(['-h',  self._config._julius_hmm_de])
+                self._cmdline.extend(['-hlist', self._config._julius_hlist_de])
+                self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
+                self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
+                self._cmdline.extend(["-sb", "160.0"])
+            #
+            #  English
+            else:
+                self._cmdline.extend(['-h',  self._config._julius_hmm_en])
+                self._cmdline.extend(['-hlist', self._config._julius_hlist_en])
+                self._cmdline.extend(["-dfa", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dfa")])
+                self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
+                self._cmdline.extend(["-sb", "160.0"])
+    
+            if self._memsize == "large":
+                self._cmdline.extend(["-b", "-1", "-b2", "120", "-s", "1000" ,"-m", "2000"])
+            else:
+                self._cmdline.extend(["-b", "-1", "-b2", "80", "-s", "500" ,"-m", "1000"])
+    
+            self._cmdline.extend(["-n", "5", "-output", "5"])
 
-        self._audioport = self.getunusedport()
-        self._moduleport = self.getunusedport()
+            self._cmdline.extend(["-rejectshort", "200"])
 
-        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)])
-        self._cmdline.extend(["-module", str(self._moduleport)])
-
-        if self._memsize == "large":
-            self._cmdline.extend(["-b", "-1", "-b2", "120", "-s", "1000" ,"-m", "2000"])
-        else:
-            self._cmdline.extend(["-b", "-1", "-b2", "80", "-s", "500" ,"-m", "1000"])
-
-        self._cmdline.extend(["-n", "5", "-output", "5"])
-        self._cmdline.extend(["-pausesegment", "-rejectshort", "200"])
+        self._cmdline.extend(["-pausesegment"])
         self._cmdline.extend(["-nostrip"])
-
-        #self._cmdline.extend(["-multipath"])
-        #self._cmdline.extend(["-spmodel", "sp", "-iwsp", "-iwsppenalty", "-70.0"])
-
+    
+            #self._cmdline.extend(["-multipath"])
+            #self._cmdline.extend(["-spmodel", "sp", "-iwsp", "-iwsppenalty", "-70.0"])
+    
         self._cmdline.extend(["-spmodel", "sp"])
         self._cmdline.extend(["-penalty1", "5.0", "-penalty2", "20.0", "-iwcd1", "max", "-gprune", "safe"])
+        self._cmdline.extend(["-forcedict"])
         self._cmdline.extend(["-record", self._logdir])
         self._cmdline.extend(["-smpFreq", "16000"])
-        self._cmdline.extend(["-forcedict"])
-
+    
+        self._audioport = self.getunusedport()
+        self._moduleport = self.getunusedport()
+    
+        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)])
+        self._cmdline.extend(["-module", str(self._moduleport)])
+    
         #self._cmdline.extend(["-nolog"])
+
+        #####################################################
+
         print "command line: %s" % " ".join(self._cmdline)
+        print self._cmdline
 
         self._running = True
         self._p = subprocess.Popen(self._cmdline)
@@ -193,12 +219,15 @@ class JuliusWrap(threading.Thread):
                     c(self.CB_LOGWAVE, f)
             try:
                 self._modulesocket.settimeout(1)
-                data = self._prevdata + unicode(self._modulesocket.recv(1024*10), 'euc_jp')
+                #data = self._prevdata + unicode(self._modulesocket.recv(1024*10), 'euc_jp')
+                data = self._prevdata + unicode(self._modulesocket.recv(1024*10), 'utf-8')
             except socket.timeout:
                 continue
             except socket.error:
                 print 'socket error'
                 break
+            except:
+                continue
             self._gotinput = True
             ds = data.split(".\n")
             self._prevdata = ds[-1]
@@ -329,6 +358,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._lang = 'en'
         self._srgs = None
         self._j = None
+        self._mode = 'grammara'
         self._config = config()
 
         self._copyrights = []
@@ -410,7 +440,10 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onActivated(self, ec_id):
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
-        self._lang = self._srgs._lang
+        if self._mode == 'dictation' :
+            self._lang = 'ja'
+        else:
+            self._lang = self._srgs._lang
         self._j = JuliusWrap(self._lang, self)
         self._j.start()
         self._j.setcallback(self.onResult)
@@ -418,13 +451,17 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         while self._j._gotinput == False:
             time.sleep(0.1)
 
-        for r in self._srgs._rules.keys():
-            gram = self._srgs.toJulius(r)
-            if gram == "":
-                return RTC.RTC_ERROR
-            self._logger.RTC_INFO("register grammar: %s" % (r,))
-            self._j.addgrammar(gram, r)
-        self._j.switchgrammar(self._srgs._rootrule)
+        if self._j._mode == 'dictation' :
+            self._logger.RTC_INFO("run with dictation mode")
+        else:
+            for r in self._srgs._rules.keys():
+                gram = self._srgs.toJulius(r)
+                if gram == "":
+                    return RTC.RTC_ERROR
+                self._logger.RTC_INFO("register grammar: %s" % (r,))
+                self._j.addgrammar(gram, r)
+            self._j.switchgrammar(self._srgs._rootrule)
+
         return RTC.RTC_OK
 
     #
@@ -459,6 +496,9 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     #  OnResult
     #
     def onResult(self, type, data):
+        print "====="
+        print type
+
         if type == JuliusWrap.CB_DOCUMENT:
             d = data.first()
             if d.name == 'input':
@@ -548,6 +588,10 @@ class JuliusRTCManager:
         parser.add_option('-g', '--gui', dest='guimode', action="store_true",
                           default=False,
                           help=_('show file open dialog in GUI'))
+
+        parser.add_option('-D', '--dictation', dest='dictation_mode', action="store_true",
+                          default=False,
+                          help=_('run with dictation mode'))
         try:
             opts, args = parser.parse_args()
         except optparse.OptionError, e:
@@ -559,9 +603,12 @@ class JuliusRTCManager:
             if sel is not None:
                 args.extend(sel)
     
-        if len(args) == 0:
+        if opts.dictation_mode == False and len(args) == 0:
             parser.error("wrong number of arguments")
             sys.exit(1)
+            
+        if opts.dictation_mode == True:
+          args.extend(['dictation'])
 
         self._grammars = args
         self._comp = {}
@@ -583,12 +630,11 @@ class JuliusRTCManager:
         manager.registerFactory(profile, JuliusRTC, OpenRTM_aist.Delete)
   
         for a in self._grammars:
-#            print "compiling grammar: %s" % (a,)
-#            srgs = SRGS(a)
-#            print "done"
             self._comp[a] = manager.createComponent("JuliusRTC?exec_cxt.periodic.rate=1")
-#            self._comp[a].setgrammar(srgs)
-            self._comp[a].setgrammarfile(a)
+            if a == 'dictation':
+                self._comp[a]._mode='dictation'
+            else:
+                self._comp[a].setgrammarfile(a)
 
 #
 #  Main
