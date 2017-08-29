@@ -20,20 +20,24 @@ from openhrivoice.JuliusRTC.parsejuliusdict import *
 from openhrivoice.JuliusRTC.parsevoxforgedict import *
 
 #
-#
+#  Lexicon Database class
 #
 class LexiconDB:
     ''' Utility class to store pronunciation dictionary to database'''
-    
+    #
+    #  Constructor
+    #
     def __init__(self, fname, version, prop=None):
         self._config = config()
         if prop :
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
-
+        #
         self._db = sqlite3.connect(fname)
         createtable = False
 
+        #
+        #  check version
         if not self.tableexist('version'):
             # create version table if not
             self.createversiontable(version)
@@ -44,28 +48,39 @@ class LexiconDB:
             self.createversiontable(version)
             createtable = True
 
+        #
+        # 
         if createtable == True:
             if self.tableexist('data'):
                 self._db.execute(u'drop table data;')
             self.createdatatable()
 
+            #
+            #  lexicon of English phrases
             dic = VoxforgeDict(self._config._julius_dict_en)
             for t, vs in dic._dict.iteritems():
                 for v in vs:
                     self.register(t.lower(), v, 'ARPAbet')
             del dic
 
+            #
+            # lexicon of Japanese phrases
             dic = JuliusDict(self._config._julius_dict_ja)
             for t, vs in dic._dict.iteritems():
                 for v in vs:
                     self.register(t, v, 'KANA')
             del dic
+
             self._db.commit()
 
+    #
+    # check table exists or not
     def tableexist(self, name):
         tbls = self._db.execute("select * from sqlite_master where type = 'table' and name = '%s';" % (name,))
         return (len(tbls.fetchall()) != 0)
 
+    #
+    #  create 'version' table
     def createversiontable(self, version):
         sql = u"""
 create table version (
@@ -75,6 +90,8 @@ create table version (
         self._db.execute(sql)
         self._db.execute(u'insert into version values (?);', (version,))
 
+    #
+    #  create lexicon table
     def createdatatable(self):
         sql = u"""
 create table data (
@@ -87,13 +104,19 @@ create table data (
         self._db.execute('create index text_index on data(text);')
         self._db.execute('create index alphabet_index on data(alphabet);')
 
+    #
+    #   register data
     def register(self, text, pronounce, alphabet):
         sql = u'insert into data values (?,?,?);'
         self._db.execute(sql, (text, pronounce, alphabet))
 
+    #
+    #  
     def lookup(self, text):
         return list(set([p[0] for p in self._db.execute(u"select pronounce from data where text = '%s';" % (text.lower(),)).fetchall()]))
 
+    #
+    # 
     def substringlookup(self, text):
         p = self.lookup(text)
         if len(p) == 0:

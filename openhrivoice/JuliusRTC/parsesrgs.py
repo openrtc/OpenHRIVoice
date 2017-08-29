@@ -169,6 +169,7 @@ class SRGS:
         self._rootrule = None
         self._lex = None
         self._node = None
+
         if prop :
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
@@ -177,6 +178,7 @@ class SRGS:
             doc = etree.parse(file)
             doc.xinclude()
             self._node = doc.getroot()
+
         except etree.XMLSyntaxError, e:
             print "[error] invalid xml syntax"
             print e
@@ -198,7 +200,6 @@ class SRGS:
             rr = SRGSRule().parse(r)
             self._rules[rr._id] = rr
         self._rootrule = node.get('root')
-
 
     #
     #
@@ -240,6 +241,7 @@ class SRGS:
                 dfa.append((currentstate, w, newstate))
                 currentstate = newstate
             dfa.append((currentstate, item._words[-1], endstate))
+
         elif item._type == "item":
             if item._repeatmax:
                 currentstate = startstate
@@ -282,9 +284,11 @@ class SRGS:
                 for v in dfa._dfa:
                     if v[2] == startstate:
                         dfa.append((v[0], v[1], endstate))
+
         elif item._type == "one-of":
             for i in item._items:
                 self.toJulius_recur(i, dfa, startstate, endstate)
+
         elif item._type == "ruleref":
             if item._uri[0] != '#':
                 raise KeyError("reference to external uri: %s" % (item._uri,))
@@ -298,6 +302,7 @@ class SRGS:
                 self.toJulius_recur(i, dfa, currentstate, newstate)
                 currentstate = newstate
             self.toJulius_recur(root._items[-1], dfa, currentstate, endstate)
+
         elif item._type == "tag":
             pass
 
