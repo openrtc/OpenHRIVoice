@@ -39,24 +39,27 @@ except:
 
 __doc__ = _('English speech synthesis component.')
 
+#
+#  Festival Wrapper class
+#
 class FestivalWrap(VoiceSynthBase):
-    def __init__(self):
+    #
+    # Constructor
+    def __init__(self, prop):
         VoiceSynthBase.__init__(self)
         self._config = config()
+
+        if prop.getProperty("festival.3rdparty_dir") :
+            self._conf.festival(prop.getProperty("festival.3rdparty_dir"))
+
         self._cmdline =[self._config._festival_bin, '--pipe']
         self._cmdline.extend(self._config._festival_opt)
         self._copyrights = []
-        self._copyrights.append('''The Festival Speech Synthesis System
-(http://www.cstr.ed.ac.uk/projects/festival/)
-Copyright (C) 1996-2006 Centre for Speech Technology Research, University of Edinburgh, UK
-All rights reserved.
-''')
-        self._copyrights.append('''Diphone Synthesizer Voice for American English
-released by Alan W Black and Kevin Lenzo (http://www.cstr.ed.ac.uk/projects/festival/)
-Copyright (C) 1998 Centre for Speech Technology Research, University of Edinburgh, UK
-All rights reserved.
-''')
-        
+        self._copyrights.append(utils.read_file_contents('festival_copyright.txt'))
+        self._copyrights.append(utils.read_file_contents('diphone_copyright.txt'))
+
+    #
+    #  Syntheseizer 
     def synthreal(self, data, samplerate, character):
         textfile = self.gettempname()
         durfile = self.gettempname().replace("\\", "\\\\")
@@ -68,6 +71,7 @@ All rights reserved.
         fp.write('(utt.save.segs u "' + durfile + '")')
         fp.write('(utt.save.wave u "' + wavfile + '")')
         fp.close()
+
         # run Festival
         cmdarg =[self._config._festival_bin,] + self._config._festival_opt + ['-b', textfile]
         p = subprocess.Popen(cmdarg)
@@ -85,7 +89,11 @@ All rights reserved.
         df.close()
         os.remove(durfile)
         return (durationdata, wavfile)
-        
+
+
+#
+#  RT-Component
+#
 FestivalRTC_spec = ["implementation_id", "FestivalRTC",
                     "type_name",         "FestivalRTC",
                     "description",       __doc__.encode('UTF-8'),
@@ -110,10 +118,17 @@ FestivalRTC_spec = ["implementation_id", "FestivalRTC",
                     "conf.__description__.character", _("Character of the voice (fixed to male).").encode('UTF-8'),
                     ""]
 
+#
+#  FestivalRTC class
+#
 class FestivalRTC(VoiceSynthComponentBase):
+    #
+    # Constructor
     def __init__(self, manager):
         VoiceSynthComponentBase.__init__(self, manager)
 
+    #
+    #  OnInitialize
     def onInitialize(self):
         VoiceSynthComponentBase.onInitialize(self)
         try:
@@ -129,8 +144,12 @@ class FestivalRTC(VoiceSynthComponentBase):
             self._logger.RTC_INFO('')
         return RTC.RTC_OK
 
-
+#
+#   RTC Manager
+#
 class FestivalRTCManager:
+    #
+    #
     def __init__(self):
         encoding = locale.getpreferredencoding()
         sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
@@ -148,14 +167,21 @@ class FestivalRTCManager:
         self._manager.setModuleInitProc(self.moduleInit)
         self._manager.activateManager()
 
+    #
+    #
     def start(self):
         self._manager.runManager(False)
 
+    #
+    #
     def moduleInit(self, manager):
         profile=OpenRTM_aist.Properties(defaults_str=FestivalRTC_spec)
         manager.registerFactory(profile, FestivalRTC, OpenRTM_aist.Delete)
         self._comp = manager.createComponent("FestivalRTC")
 
+#
+#
+#
 def main():
     manager = FestivalRTCManager()
     manager.start()

@@ -1,0 +1,4 @@
+Diphone Synthesizer Voice for American English
+released by Alan W Black and Kevin Lenzo (http://www.cstr.ed.ac.uk/projects/festival/)
+Copyright (C) 1998 Centre for Speech Technology Research, University of Edinburgh, UK
+All rights reserved.
