@@ -161,7 +161,7 @@ class SRGS:
     #
     #
     #
-    def __init__(self, file, prop=None):
+    def __init__(self, file, prop=None, rebuild_lexicon=False):
         self._config = config()
         self._filename = file
         self._rules = {}
@@ -169,7 +169,9 @@ class SRGS:
         self._rootrule = None
         self._lex = None
         self._node = None
+        self._rebuild_lexicon=rebuild_lexicon
 
+        self._prop = prop
         if prop :
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
@@ -318,7 +320,7 @@ class SRGS:
         lex = None
         if self._lex is not None:
             lex = PLS().parse(self._lex)
-        lexdb = LexiconDB(self._config._lexicondb, __version__)
+        lexdb = LexiconDB(self._config._lexicondb, __version__, self._prop, self._rebuild_lexicon)
 
         dfa = DFA()
         startstate = dfa.newstate()

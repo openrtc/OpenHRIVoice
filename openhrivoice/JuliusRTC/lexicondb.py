@@ -27,14 +27,14 @@ class LexiconDB:
     #
     #  Constructor
     #
-    def __init__(self, fname, version, prop=None):
+    def __init__(self, fname, version, prop=None, rebuid=False):
         self._config = config()
         if prop :
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
         #
         self._db = sqlite3.connect(fname)
-        createtable = False
+        createtable = rebuid
 
         #
         #  check version

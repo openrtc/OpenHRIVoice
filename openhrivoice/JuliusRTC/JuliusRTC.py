@@ -24,7 +24,9 @@ import sys, os, socket, subprocess, signal, threading, platform
 import time, struct, traceback, locale, codecs, getopt, wave, tempfile
 import optparse
 from glob import glob
-from BeautifulSoup import BeautifulSoup
+#from BeautifulSoup import BeautifulSoup
+from lxml import *
+from bs4 import BeautifulSoup
 from xml.dom.minidom import Document
 from openhrivoice.JuliusRTC.parsesrgs import *
 import OpenRTM_aist
@@ -67,6 +69,8 @@ class JuliusWrap(threading.Thread):
         self._prevdata = ''
 
         self._mode = 'grammar'
+        #self._jcode = 'euc_jp'
+        self._jcode = 'utf-8'
 
         self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -90,9 +94,8 @@ class JuliusWrap(threading.Thread):
             self._cmdline.extend(['-h',     self._config._julius_hmm_ja])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_ja])
             self._cmdline.extend(["-b", "1500", "-b2", "100", "-s", "500" ,"-m", "10000"])
-            #self._cmdline.extend(["-b", "-1", "-b2", "120", "-s", "1000" ,"-m", "2000"])
-            self._cmdline.extend(["-n", "30", "-output", "1", "-zmeanframe", "-rejectshort" ,"800", "-lmp", '10.0' ,'0', '-lmp2', '10', '0'])
-            #self._cmdline.extend(["-n", "30", "-output", "1", "-zmeanframe", "-rejectshort" ,"800"])
+            self._cmdline.extend(["-n", "30", "-output", "5", "-zmeanframe", "-rejectshort" ,"800", "-lmp", '10.0' ,'0', '-lmp2', '10', '0'])
+            self._cmdline.extend(["-pausesegment"])
 
         else:
             #
@@ -127,13 +130,9 @@ class JuliusWrap(threading.Thread):
     
             self._cmdline.extend(["-n", "5", "-output", "5"])
 
-            self._cmdline.extend(["-rejectshort", "200"])
+            self._cmdline.extend(["-pausesegment", "-rejectshort", "200"])
 
-        self._cmdline.extend(["-pausesegment"])
         self._cmdline.extend(["-nostrip"])
-    
-            #self._cmdline.extend(["-multipath"])
-            #self._cmdline.extend(["-spmodel", "sp", "-iwsp", "-iwsppenalty", "-70.0"])
     
         self._cmdline.extend(["-spmodel", "sp"])
         self._cmdline.extend(["-penalty1", "5.0", "-penalty2", "20.0", "-iwcd1", "max", "-gprune", "safe"])
@@ -219,23 +218,27 @@ class JuliusWrap(threading.Thread):
                     c(self.CB_LOGWAVE, f)
             try:
                 self._modulesocket.settimeout(1)
-                #data = self._prevdata + unicode(self._modulesocket.recv(1024*10), 'euc_jp')
-                data = self._prevdata + unicode(self._modulesocket.recv(1024*10), 'utf-8')
+                data = self._prevdata + unicode(self._modulesocket.recv(1024*10),  self._jcode)
             except socket.timeout:
                 continue
             except socket.error:
                 print 'socket error'
                 break
-            except:
-                continue
+
             self._gotinput = True
             ds = data.split(".\n")
             self._prevdata = ds[-1]
             ds = ds[0:-1]
             for d in ds:
-                dx = BeautifulSoup(d)
-                for c in self._callbacks:
-                    c(self.CB_DOCUMENT, dx)
+                try:
+                  dx = BeautifulSoup(d, "lxml")
+                  for c in self._callbacks:
+                      c(self.CB_DOCUMENT, dx)
+                except:
+                  import traceback
+                  traceback.print_exc()
+                  pass
+
         print 'JuliusWrap: exit from event loop'
 
     #
@@ -247,7 +250,7 @@ class JuliusWrap(threading.Thread):
             self._firstgrammar = False
         else:
             self._modulesocket.sendall("ADDGRAM %s\n" % (name,))
-        self._modulesocket.sendall(data.encode('euc_jp', 'backslashreplace'))
+        self._modulesocket.sendall(data.encode(self._jcode, 'backslashreplace'))
         self._grammars[name] = len(self._grammars)
         self._activegrammars[name] = True
         time.sleep(0.1)
@@ -459,6 +462,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
                 if gram == "":
                     return RTC.RTC_ERROR
                 self._logger.RTC_INFO("register grammar: %s" % (r,))
+                print gram
                 self._j.addgrammar(gram, r)
             self._j.switchgrammar(self._srgs._rootrule)
 
@@ -496,20 +500,19 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     #  OnResult
     #
     def onResult(self, type, data):
-        print "====="
-        print type
-
         if type == JuliusWrap.CB_DOCUMENT:
-            d = data.first()
-            if d.name == 'input':
+            if data.input:
+                d=data.input
                 self._logger.RTC_INFO(d['status'])
                 self._statusdata.data = str(d['status'])
                 self._statusport.write()
-            elif d.name == 'rejected':
+            elif data.rejected:
+                d=data.rejected
                 self._logger.RTC_INFO('rejected')
                 self._statusdata.data = 'rejected'
                 self._statusport.write()
-            elif d.name == 'recogout':
+            elif data.recogout:
+                d = data.recogout
                 doc = Document()
                 listentext = doc.createElement("listenText")
                 doc.appendChild(listentext)
@@ -519,7 +522,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
                     count = 0
                     text = []
                     for w in s.findAll('whypo'):
-                        if w['word'][0] == '<':
+                        if not w['word'] or  w['word'][0] == '<':
                             continue
                         whypo = doc.createElement("word")
                         whypo.setAttribute("text", w['word'])
@@ -542,6 +545,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
                 #self._logger.RTC_INFO(data.decode('utf-8', 'backslashreplace'))
                 self._outdata.data = data
                 self._outport.write()
+
         elif type == JuliusWrap.CB_LOGWAVE:
             t = os.stat(data).st_ctime
             tf = t - int(t)
@@ -564,10 +568,10 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     #  Set Grammer
     #
-    def setgrammarfile(self, gram):
+    def setgrammarfile(self, gram, rebuid=False):
         self._grammer = gram
         print "compiling grammar: %s" % (gram,)
-        self._srgs = SRGS(gram, self._properties)
+        self._srgs = SRGS(gram, self._properties, rebuid)
         print "done"
 
 #
@@ -592,6 +596,10 @@ class JuliusRTCManager:
         parser.add_option('-D', '--dictation', dest='dictation_mode', action="store_true",
                           default=False,
                           help=_('run with dictation mode'))
+
+        parser.add_option('-r', '--rebuild-lexicon', dest='rebuild_lexicon', action="store_true",
+                          default=False,
+                          help=_('rebuild lexicon'))
         try:
             opts, args = parser.parse_args()
         except optparse.OptionError, e:
@@ -609,6 +617,9 @@ class JuliusRTCManager:
             
         if opts.dictation_mode == True:
           args.extend(['dictation'])
+
+
+        self._rebuid_lexicon=opts.rebuild_lexicon
 
         self._grammars = args
         self._comp = {}
@@ -634,7 +645,7 @@ class JuliusRTCManager:
             if a == 'dictation':
                 self._comp[a]._mode='dictation'
             else:
-                self._comp[a].setgrammarfile(a)
+                self._comp[a].setgrammarfile(a, self._rebuid_lexicon)
 
 #
 #  Main
