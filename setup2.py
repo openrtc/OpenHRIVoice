@@ -28,10 +28,13 @@ if sys.platform == "win32":
         "console": [
                     "openhrivoice/OpenJTalkRTC/OpenJTalkRTC.py",
                     "openhrivoice/JuliusRTC/JuliusRTC.py",
+                    "openhrivoice/FestivalRTC/FestivalRTC.py",
                     ],
         "options": {
             "py2exe": {
-                "includes": ["xml.etree.ElementTree", "lxml._elementpath", "OpenRTM_aist", "RTC"],
+                "includes": ["xml.etree.ElementTree", "lxml._elementpath", "OpenRTM_aist", "RTC",
+                              "cairo", "pango", "pangocairo",
+                             "atk", "gobject", "gio", "glib", "gtk", "gtksourceview2"],
                 "dll_excludes": ["USP10.dll", "NSI.dll", "MSIMG32.dll", 
                                  "DNSAPI.dll", "ierutil.dll", "powrprof.dll",
                                   "msimg32.dll", "mpr.dll", "urlmon.dll", "dnsapi.dll",
@@ -39,6 +42,7 @@ if sys.platform == "win32":
                                   "OLE32.dll", "SHLWAPI.dll", "MSVCR100.dll", "COMCTL32.dll",
                                   "ADVAPI32.dll", "msvcrt.dll", "WS2_32.dll", "WINSPOOL.drv",
                                   "GDI32.dll", "KERNEL32.dll", "COMDLG32.dll", "gdiplus.dll",
+                                  "libxml2-2.dll", "gtksourceview2.pyd",
                                 ],
             }
         }
@@ -69,6 +73,7 @@ setup(name='openhrivoice',
       [console_scripts]
       openjtalkrtc = openhrivoice.OpenJTalkRTC.OpenJTalkRTC:main
       juliusrtc = openhrivoice.JuliusRTC.JuliusRTC:main
+      festivalrtc = openhrivoice.FestivalRTC.FestivalRTC:main
       """,
       **extra
       )
