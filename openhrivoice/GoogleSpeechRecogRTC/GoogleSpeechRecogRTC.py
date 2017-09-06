@@ -52,30 +52,42 @@ class GoogleSpeechRecogWrap(object):
         self._platform = platform.system()
         self._callbacks = []
 
-
         self._buffer = []
         self.audio_segment = []
         self._sample_width=2
         self._frame_rate=16000
         self._channels=1
-        self._min_silence=100
+
+        self._min_silence=200
         self._silence_thr=-10
+        self._min_buflen=8000
 
         self._endpoint = 'http://www.google.com/speech-api/v2/recognize'
         self._lang=language
         self._apikey = ''
+        self._logdir = 'log'
+        self._logger = False
 
         prop = rtc._properties
         if prop.getProperty("google.speech.apikey") :
             self._apikey=prop.getProperty("google.speech.apikey")
 
+        if prop.getProperty("google.speech.lang") :
+            self._lang=prop.getProperty("google.speech.lang")
+
+        if prop.getProperty("google.speech.logdir") :
+            self._logdir=prop.getProperty("google.speech.logdir")
+
+        if prop.getProperty("google.speech.save_wav") :
+            if prop.getProperty("google.speech.save_wav") == 'YES':
+                self._logger = True
     #
     #   Write to audio data
     #
     def write(self, data):
         try:
             self._buffer.extend(data)
-            if len(self._buffer) > 8000:
+            if len(self._buffer) > self._min_buflen:
                 audio=AudioSegment(self._buffer, sample_width=self._sample_width, channels=self._channels, frame_rate=self._frame_rate)
                 chunks = detect_nonsilent(audio, min_silence_len=self._min_silence, silence_thresh=self._silence_thr)
 
@@ -83,19 +95,23 @@ class GoogleSpeechRecogWrap(object):
                     self.audio_segment.extend(self._buffer)
                 else:
                     if self.audio_segment :
+                        self.audio_segment.extend(self._buffer)
                         res = self.request_google(self.audio_segment)
                         res.pop(0)
                         if res :
                             for c in self._callbacks:
                                 c(res)
                         else:
-                            print "===="
+                            print "----"
+
+                        if self._logger :
+                            self.save_to_wav(self.get_logfile_name(), self.audio_segment)
                         self.audio_segment=[]
                 self._buffer = []
 
         except:
             print traceback.format_exc()
-            pass
+
         return 0
 
     #
@@ -106,16 +122,26 @@ class GoogleSpeechRecogWrap(object):
 
     #
     #  Set Lang
+    #  (ja-JP, en-US, en-GB, en-AU, de-DE, ....)
     #
     def set_lang(self, lang):
         self._lang = lang
 
+    def set_voice_detect_param(self, mval, thr, buflen):
+        self._min_silence = mval
+        self._silence_thr=thr
+        self._min_buflen=buflen
     #
     #  Set callback function
     #
     def setcallback(self, func):
         self._callbacks.append(func)
 
+    #
+    #
+    #
+    def get_logfile_name(self):
+        return os.path.join(self._logdir, time.strftime('voice%Y%m%d_%H%M%S.wav'))
     #
     #  Save to Wav file
     #
@@ -135,13 +161,20 @@ class GoogleSpeechRecogWrap(object):
     def request_google(self, data):
         query_string = {'output': 'json', 'lang': self._lang, 'key': self._apikey}
         url = '{0}?{1}'.format(self._endpoint, urllib.urlencode(query_string)) 
-        #voice_data = open(name, 'rb').read()
+
         headers = {'Content-Type': 'audio/l16; rate=16000'}
         voice_data = str(bytearray(data))
-        request = urllib2.Request(url, data=voice_data, headers=headers)
-        response = urllib2.urlopen(request).read()
 
-        return response.decode('utf-8').split()
+        try:
+            request = urllib2.Request(url, data=voice_data, headers=headers)
+            result = urllib2.urlopen(request)
+            response = result.read()
+            print response
+            return response.decode('utf-8').split()
+        except:
+            print url
+            print traceback.format_exc()
+            return ["Error"]
 
 
 #
@@ -157,6 +190,23 @@ GoogleSpeechRecogRTC_spec = ["implementation_id", "GoogleSpeechRecogRTC",
                   "max_instance",      "1",
                   "language",          "Python",
                   "lang_type",         "script",
+
+		  "conf.default.lang", "ja-JP",
+		  "conf.__widget__.lang", "text",
+                  "conf.__type__.lang", "string",
+
+		  "conf.default.min_buflen", "8000",
+		  "conf.__widget__.min_buflen", "text",
+                  "conf.__type__.min_buflen", "int",
+
+		  "conf.default.min_silence", "200",
+		  "conf.__widget__.min_silence", "text",
+                  "conf.__type__.min_silence", "int",
+
+		  "conf.default.silence_thr", "-10",
+		  "conf.__widget__.silence_thr", "text",
+                  "conf.__type__.silence_thr", "int",
+
                   ""]
 #
 #  DataListener class
@@ -189,6 +239,10 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
         self._config = config()
         self._recog = None
         self._copyrights=[]
+        self._lang = [ "ja-JP" ]
+        self._min_silence = [ 150 ]
+        self._silence_thr = [ -10 ]
+        self._min_buflen =  [ 8000 ]
 
 
     #
@@ -199,7 +253,12 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logger = OpenRTM_aist.Manager.instance().getLogbuf(self._properties.getProperty("instance_name"))
         self._logger.RTC_INFO("GoogleSpeechRecogRTC version " + __version__)
         self._logger.RTC_INFO("Copyright (C) 2017 Isao Hara")
-
+        #
+        #
+	self.bindParameter("lang", self._lang, "ja-JP")
+	self.bindParameter("min_silence", self._min_silence, "150")
+	self.bindParameter("silence_thr", self._silence_thr, "-10")
+	self.bindParameter("min_buflen", self._min_buflen, "8000")
         #
         # create inport for audio stream
         self._indata = RTC.TimedOctetSeq(RTC.Time(0,0), None)
@@ -223,7 +282,7 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
                 self._logger.RTC_INFO('  '+l)
             self._logger.RTC_INFO('')
 
-        self._recog = GoogleSpeechRecogWrap(self, 'ja-JP')
+        self._recog = GoogleSpeechRecogWrap(self, self._lang[0])
         self._recog.setcallback(self.onResult)
 
         return RTC.RTC_OK
@@ -240,6 +299,9 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onActivated(self, ec_id):
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
+        self._recog.set_lang(self._lang[0])
+        self._recog.set_voice_detect_param(int(self._min_silence[0]),  int(self._silence_thr[0]), int(self._min_buflen[0]))
+
         if self._recog._apikey:
             return RTC.RTC_OK
         else:
