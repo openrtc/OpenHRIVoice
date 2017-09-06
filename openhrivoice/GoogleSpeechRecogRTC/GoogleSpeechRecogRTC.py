@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-'''Voice segmentation component
+'''Google Speech Recognition component
 
 Copyright (C) 2017
     Isao Hara
@@ -35,30 +35,39 @@ try:
 except:
     _ = lambda s: s
 
-__doc__ = _('Voice Segmentation component.')
+
+__doc__ = _('Google Speech Recognition component.')
 
 
 #
 #  
 #
-class VoiceSegmentWrap(threading.Thread):
+class GoogleSpeechRecogWrap(object):
     
     #
     #  Constructor
     #
-    def __init__(self, language='jp', rtc=''):
-        threading.Thread.__init__(self)
+    def __init__(self, rtc, language='ja-JP'):
         self._config = config()
         self._platform = platform.system()
         self._callbacks = []
+
 
         self._buffer = []
         self.audio_segment = []
         self._sample_width=2
         self._frame_rate=16000
         self._channels=1
-        self._min_silence=150
+        self._min_silence=100
         self._silence_thr=-10
+
+        self._endpoint = 'http://www.google.com/speech-api/v2/recognize'
+        self._lang=language
+        self._apikey = ''
+
+        prop = rtc._properties
+        if prop.getProperty("google.speech.apikey") :
+            self._apikey=prop.getProperty("google.speech.apikey")
 
     #
     #   Write to audio data
@@ -66,16 +75,21 @@ class VoiceSegmentWrap(threading.Thread):
     def write(self, data):
         try:
             self._buffer.extend(data)
-            if len(self._buffer) >= 5000:
+            if len(self._buffer) > 8000:
                 audio=AudioSegment(self._buffer, sample_width=self._sample_width, channels=self._channels, frame_rate=self._frame_rate)
                 chunks = detect_nonsilent(audio, min_silence_len=self._min_silence, silence_thresh=self._silence_thr)
 
                 if chunks :
-                    self.audio_segment.extend( self._buffer)
+                    self.audio_segment.extend(self._buffer)
                 else:
                     if self.audio_segment :
-                        self.save_to_wav("test.wav", self.audio_segment)
-                        print "save to wav file : %d" % len(self.audio_segment)
+                        res = self.request_google(self.audio_segment)
+                        res.pop(0)
+                        if res :
+                            for c in self._callbacks:
+                                c(res)
+                        else:
+                            print "===="
                         self.audio_segment=[]
                 self._buffer = []
 
@@ -84,6 +98,17 @@ class VoiceSegmentWrap(threading.Thread):
             pass
         return 0
 
+    #
+    #  Set ApiKey
+    #
+    def set_apikey(self, key):
+        self._apikey = key
+
+    #
+    #  Set Lang
+    #
+    def set_lang(self, lang):
+        self._lang = lang
 
     #
     #  Set callback function
@@ -104,12 +129,26 @@ class VoiceSegmentWrap(threading.Thread):
         wave_data.writeframesraw(bytearray(data))
         wave_data.close()
 
+    #
+    #  Request Google Voice Recognition
+    #
+    def request_google(self, data):
+        query_string = {'output': 'json', 'lang': self._lang, 'key': self._apikey}
+        url = '{0}?{1}'.format(self._endpoint, urllib.urlencode(query_string)) 
+        #voice_data = open(name, 'rb').read()
+        headers = {'Content-Type': 'audio/l16; rate=16000'}
+        voice_data = str(bytearray(data))
+        request = urllib2.Request(url, data=voice_data, headers=headers)
+        response = urllib2.urlopen(request).read()
+
+        return response.decode('utf-8').split()
+
 
 #
-#  VoiceSegmentRTC 
+#  JuliusRTC 
 #
-VoiceSegmentRTC_spec = ["implementation_id", "VoiceSegmentRTC",
-                  "type_name",         "VoiceSegmentRTC",
+GoogleSpeechRecogRTC_spec = ["implementation_id", "GoogleSpeechRecogRTC",
+                  "type_name",         "GoogleSpeechRecogRTC",
                   "description",       __doc__.encode('UTF-8'),
                   "version",           __version__,
                   "vendor",            "AIST",
@@ -139,20 +178,18 @@ class DataListener(OpenRTM_aist.ConnectorDataListenerT):
         self._obj.onData(self._name, data)
 
 #
-#  VoiceSegmentRTC Class
+#  GoogleSpeechRecogRTC Class
 #
-class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
+class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     #  Constructor
     #
     def __init__(self, manager):
         OpenRTM_aist.DataFlowComponentBase.__init__(self, manager)
         self._config = config()
-        self._j = None
+        self._recog = None
+        self._copyrights=[]
 
-        self._copyrights = []
-        self._copyrights.append( utils.read_file_contents(os.path.join( self._config._basedir, "doc", "julius_copyright.txt")))
-        self._copyrights.append( utils.read_file_contents(os.path.join( self._config._basedir, "doc", "voxforge_copyright.txt")))
 
     #
     #  OnInitialize
@@ -160,7 +197,7 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     def onInitialize(self):
         OpenRTM_aist.DataFlowComponentBase.onInitialize(self)
         self._logger = OpenRTM_aist.Manager.instance().getLogbuf(self._properties.getProperty("instance_name"))
-        self._logger.RTC_INFO("JuliusRTC version " + __version__)
+        self._logger.RTC_INFO("GoogleSpeechRecogRTC version " + __version__)
         self._logger.RTC_INFO("Copyright (C) 2017 Isao Hara")
 
         #
@@ -186,6 +223,9 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
                 self._logger.RTC_INFO('  '+l)
             self._logger.RTC_INFO('')
 
+        self._recog = GoogleSpeechRecogWrap(self, 'ja-JP')
+        self._recog.setcallback(self.onResult)
+
         return RTC.RTC_OK
 
     #
@@ -193,10 +233,6 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onFinalize(self):
         OpenRTM_aist.DataFlowComponentBase.onFinalize(self)
-#        if self._j:
-#            self._j.terminate()
-#            self._j.join()
-#            self._j = None
         return RTC.RTC_OK
 
     #
@@ -204,15 +240,10 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onActivated(self, ec_id):
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
-
-        self._j = VoiceSegmentWrap('ja', self)
-#        self._j.start()
-#        self._j.setcallback(self.onResult)
-
-#        while self._j._gotinput == False:
-#            time.sleep(0.1)
-
-        return RTC.RTC_OK
+        if self._recog._apikey:
+            return RTC.RTC_OK
+        else:
+            return RTC.RTC_ERROR
 
     #
     #  OnDeactivate
@@ -225,9 +256,9 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #  OnData (Callback from DataListener)
     #
     def onData(self, name, data):
-        if self._j:
+        if self._recog:
             if name == "data":
-                self._j.write(data.data)
+                self._recog.write(data.data)
 
 
     #
@@ -240,15 +271,16 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     #  OnResult
     #
-    def onResult(self, type, data):
-        print data
+    def onResult(self, data):
+        for line in data:
+            print line
         pass
 
 
 #
 #  Manager Class
 #
-class VoiceSegmentRTCManager:
+class GoogleSpeechRecogManager:
     #
     #  Constructor
     #
@@ -281,15 +313,15 @@ class VoiceSegmentRTCManager:
     #  Initialize rtc
     #
     def moduleInit(self, manager):
-        profile = OpenRTM_aist.Properties(defaults_str = VoiceSegmentRTC_spec)
-        manager.registerFactory(profile, VoiceSegmentRTC, OpenRTM_aist.Delete)
+        profile = OpenRTM_aist.Properties(defaults_str = GoogleSpeechRecogRTC_spec)
+        manager.registerFactory(profile, GoogleSpeechRecogRTC, OpenRTM_aist.Delete)
 
-        self._comp = manager.createComponent("VoiceSegmentRTC?exec_cxt.periodic.rate=1")
+        self._comp = manager.createComponent("GoogleSpeechRecogRTC?exec_cxt.periodic.rate=1")
 
 #
 #  Main
 #
 if __name__=='__main__':
-    manager = VoiceSegmentRTCManager()
+    manager = GoogleSpeechRecogManager()
     manager.start()
 
