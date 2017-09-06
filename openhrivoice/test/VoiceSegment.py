@@ -16,6 +16,11 @@ http://www.opensource.org/licenses/eclipse-1.0.txt
 import sys, os, socket, subprocess, signal, threading, platform
 import time, struct, traceback, locale, codecs, getopt, wave, tempfile
 import optparse
+import traceback
+
+import wave
+from pydub import AudioSegment
+from pydub.silence import *
 
 import OpenRTM_aist
 import RTC
@@ -30,12 +35,11 @@ except:
 
 __doc__ = _('Voice Segmentation component.')
 
+
 #
 #  
 #
 class VoiceSegmentWrap(threading.Thread):
-    CB_DOCUMENT = 1
-    CB_LOGWAVE = 2
     
     #
     #  Constructor
@@ -44,11 +48,15 @@ class VoiceSegmentWrap(threading.Thread):
         threading.Thread.__init__(self)
         self._config = config()
         self._platform = platform.system()
+        self._callbacks = []
+        self._buffer = []
+        self.audio_segment = []
+        self._sample_width=2
+        self._frame_rate=16000
+        self._channels=1
+        self._min_slience=150
+        self._silence_thr=-20
 
-
-    #
-    #  get unused communication port
- 
     #
     #  Terminate (Call on Finished)
     #
@@ -61,9 +69,22 @@ class VoiceSegmentWrap(threading.Thread):
     #
     def write(self, data):
         try:
-            ### output voice segment to file
+            self._buffer.extend(data)
+            if len(self._buffer) >= 5000:
+                audio=AudioSegment(self._buffer, sample_width=self._sample_width, channels=self._channels, frame_rate=self._frame_rate)
+                chunks = detect_nonsilent(audio, min_silence_len=_min_slience, silence_thresh=self._silence_thr)
+
+                if chunks :
+                    self.audio_segment.extend( self._buffer)
+                else:
+                    if self.audio_segment :
+                        self.save_to_wav("test.wav", self.audio_segment)
+                        self.audio_segment=[]
+                self._buffer = []
+
         except:
-                pass
+            print traceback.format_exc()
+            pass
         return 0
 
     #
@@ -78,31 +99,32 @@ class VoiceSegmentWrap(threading.Thread):
     def setcallback(self, func):
         self._callbacks.append(func)
 
+    #
+    #  Save to Wav file
+    #
+    def save_to_wav(self, name, data):
+        wave_data = wave.open(name, 'wb')
+        wave_data.setnchannels(self._channels)
+        wave_data.setsampwidth(self._sample_width)
+        wave_data.setframerate(self._frame_rate)
+        
+        wave_data.setnframes(int(len(data) / (self._sample_width * self._channels)))
+        wave_data.writeframesraw(bytearray(data))
+        wave_data.close()
+
 #
 #  JuliusRTC 
 #
-VoiceSegmentRTC_spec = ["implementation_id", "VoideSegmentRTC",
+VoiceSegmentRTC_spec = ["implementation_id", "VoiceSegmentRTC",
                   "type_name",         "VoiceSegmentRTC",
                   "description",       __doc__.encode('UTF-8'),
                   "version",           __version__,
                   "vendor",            "AIST",
                   "category",          "communication",
                   "activity_type",     "DataFlowComponent",
-                  "max_instance",      "10",
+                  "max_instance",      "1",
                   "language",          "Python",
                   "lang_type",         "script",
-                  "conf.default.language", "japanese",
-                  "conf.__descirption__.language", _("Specify target language.").encode('UTF-8'),
-                  "conf.__widget__.language", "radio",
-                  "conf.__constraints__.language", "(japanese, english, german)",
-                  "conf.default.phonemodel", "male",
-                  "conf.__descirption__.phonemodel", _("Specify acoustic model (fixed to male)").encode('UTF-8'),
-                  "conf.__widget__.phonemodel", "radio",
-                  "conf.__constraints__.phonemodel", "(male)",
-                  "conf.default.voiceactivitydetection", "internal",
-                  "conf.__descirption__.voiceactivitydetection", _("Specify voice activity detection trigger (fixed to internal).").encode('UTF-8'),
-                  "conf.__widget__.voiceactivitydetection", "radio",
-                  "conf.__constraints__.voiceactivitydetection", "(internal)",
                   ""]
 #
 #  DataListener class
@@ -158,35 +180,11 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
         self.registerInPort(self._inport._name, self._inport)
 
         #
-        # create inport for active grammar
-        self._grammardata = RTC.TimedString(RTC.Time(0,0), "")
-        self._grammarport = OpenRTM_aist.InPort("activegrammar", self._grammardata)
-        self._grammarport.appendProperty('description', _('Grammar ID to be activated.').encode('UTF-8'))
-        self._grammarport.addConnectorDataListener(OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
-                                                   DataListener("activegrammar", self, RTC.TimedString))
-        self.registerInPort(self._grammarport._name, self._grammarport)
-
-        #
-        # create outport for status
-        self._statusdata = RTC.TimedString(RTC.Time(0,0), "")
-        self._statusport = OpenRTM_aist.OutPort("status", self._statusdata)
-        self._statusport.appendProperty('description',
-                                        _('Status of the recognizer (one of "LISTEN [accepting speech]", "STARTREC [start recognition process]", "ENDREC [end recognition process]", "REJECTED [rejected speech input]")').encode('UTF-8'))
-        self.registerOutPort(self._statusport._name, self._statusport)
-
-        #
         # create outport for result
         self._outdata = RTC.TimedString(RTC.Time(0,0), "")
         self._outport = OpenRTM_aist.OutPort("result", self._outdata)
         self._outport.appendProperty('description', _('Recognition result in XML format.').encode('UTF-8'))
         self.registerOutPort(self._outport._name, self._outport)
-
-        #
-        # create outport for log
-        self._logdata = RTC.TimedOctetSeq(RTC.Time(0,0), None)
-        self._logport = OpenRTM_aist.OutPort("log", self._logdata)
-        self._logport.appendProperty('description', _('Log of audio data.').encode('UTF-8'))
-        self.registerOutPort(self._logport._name, self._logport)
 
         self._logger.RTC_INFO("This component depends on following softwares and datas:")
         self._logger.RTC_INFO('')
@@ -202,10 +200,10 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onFinalize(self):
         OpenRTM_aist.DataFlowComponentBase.onFinalize(self)
-        if self._j:
-            self._j.terminate()
-            self._j.join()
-            self._j = None
+#        if self._j:
+#            self._j.terminate()
+#            self._j.join()
+#            self._j = None
         return RTC.RTC_OK
 
     #
@@ -213,28 +211,13 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onActivated(self, ec_id):
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
-        if self._mode == 'dictation' :
-            self._lang = 'ja'
-        else:
-            self._lang = self._srgs._lang
-        self._j = JuliusWrap(self._lang, self)
-        self._j.start()
-        self._j.setcallback(self.onResult)
 
-        while self._j._gotinput == False:
-            time.sleep(0.1)
+        self._j = VoiceSegmentWrap('ja', self)
+#        self._j.start()
+#        self._j.setcallback(self.onResult)
 
-        if self._j._mode == 'dictation' :
-            self._logger.RTC_INFO("run with dictation mode")
-        else:
-            for r in self._srgs._rules.keys():
-                gram = self._srgs.toJulius(r)
-                if gram == "":
-                    return RTC.RTC_ERROR
-                self._logger.RTC_INFO("register grammar: %s" % (r,))
-                print gram
-                self._j.addgrammar(gram, r)
-            self._j.switchgrammar(self._srgs._rootrule)
+#        while self._j._gotinput == False:
+#            time.sleep(0.1)
 
         return RTC.RTC_OK
 
@@ -244,8 +227,8 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     def onDeactivate(self, ec_id):
         OpenRTM_aist.DataFlowComponentBase.onDeactivate(self, ec_id)
         if self._j:
-            self._j.terminate()
-            self._j.join()
+#            self._j.terminate()
+#            self._j.join()
             self._j = None
         return RTC.RTC_OK
 
@@ -256,8 +239,7 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
         if self._j:
             if name == "data":
                 self._j.write(data.data)
-            elif name == "activegrammar":
-                self._j.switchgrammar(data.data)
+
 
     #
     #  OnExecute (Do nothing)
@@ -270,79 +252,9 @@ class VoiceSegmentRTC(OpenRTM_aist.DataFlowComponentBase):
     #  OnResult
     #
     def onResult(self, type, data):
-        if type == JuliusWrap.CB_DOCUMENT:
-            if data.input:
-                d=data.input
-                self._logger.RTC_INFO(d['status'])
-                self._statusdata.data = str(d['status'])
-                self._statusport.write()
-            elif data.rejected:
-                d=data.rejected
-                self._logger.RTC_INFO('rejected')
-                self._statusdata.data = 'rejected'
-                self._statusport.write()
-            elif data.recogout:
-                d = data.recogout
-                doc = Document()
-                listentext = doc.createElement("listenText")
-                doc.appendChild(listentext)
-                for s in d.findAll('shypo'):
-                    hypo = doc.createElement("data")
-                    score = 0
-                    count = 0
-                    text = []
-                    for w in s.findAll('whypo'):
-                        if not w['word'] or  w['word'][0] == '<':
-                            continue
-                        whypo = doc.createElement("word")
-                        whypo.setAttribute("text", w['word'])
-                        whypo.setAttribute("score", w['cm'])
-                        hypo.appendChild(whypo)
-                        text.append(w['word'])
-                        score += float(w['cm'])
-                        count += 1
-                    if count == 0:
-                        score = 0
-                    else:
-                        score = score / count
-                    hypo.setAttribute("rank", s['rank'])
-                    hypo.setAttribute("score", str(score))
-                    hypo.setAttribute("likelihood", s['score'])
-                    hypo.setAttribute("text", " ".join(text))
-                    self._logger.RTC_INFO("#%s: %s (%s)" % (s['rank'], " ".join(text), str(score)))
-                    listentext.appendChild(hypo)
-                data = doc.toxml(encoding="utf-8")
-                #self._logger.RTC_INFO(data.decode('utf-8', 'backslashreplace'))
-                self._outdata.data = data
-                self._outport.write()
+        print data
+        pass
 
-        elif type == JuliusWrap.CB_LOGWAVE:
-            t = os.stat(data).st_ctime
-            tf = t - int(t)
-            self._logdata.tm = RTC.Time(int(t - tf), int(tf * 1000000000))
-            try:
-                wf = wave.open(data, 'rb')
-                self._logdata.data = wf.readframes(wf.getnframes())
-                wf.close()
-                os.remove(data)
-                self._logport.write()
-            except:
-                pass
-
-    #
-    #  Set Grammer
-    #
-    def setgrammar(self, srgs):
-        self._srgs = srgs
-
-    #
-    #  Set Grammer
-    #
-    def setgrammarfile(self, gram, rebuid=False):
-        self._grammer = gram
-        print "compiling grammar: %s" % (gram,)
-        self._srgs = SRGS(gram, self._properties, rebuid)
-        print "done"
 
 #
 #  Manager Class
@@ -356,40 +268,16 @@ class VoiceSegmentRTCManager:
         sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
         sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
 
-        parser = utils.MyParser(version=__version__, usage="%prog [srgsfile]",
-                                description=__doc__)
+        parser = utils.MyParser(version=__version__, description=__doc__)
         utils.addmanageropts(parser)
-        parser.add_option('-g', '--gui', dest='guimode', action="store_true",
-                          default=False,
-                          help=_('show file open dialog in GUI'))
 
-        parser.add_option('-D', '--dictation', dest='dictation_mode', action="store_true",
-                          default=False,
-                          help=_('run with dictation mode'))
-
-        parser.add_option('-r', '--rebuild-lexicon', dest='rebuild_lexicon', action="store_true",
-                          default=False,
-                          help=_('rebuild lexicon'))
         try:
             opts, args = parser.parse_args()
         except optparse.OptionError, e:
             print >>sys.stderr, 'OptionError:', e
             sys.exit(1)
 
-        if opts.guimode == True:
-            sel = utils.askopenfilenames(title="select W3C-SRGS grammar files")
-            if sel is not None:
-                args.extend(sel)
-    
-        if opts.dictation_mode == False and len(args) == 0:
-            parser.error("wrong number of arguments")
-            sys.exit(1)
-            
-        if opts.dictation_mode == True:
-          args.extend(['dictation'])
-
-        self._grammars = args
-        self._comp = {}
+        self._comp = None
         self._manager = OpenRTM_aist.Manager.init(utils.genmanagerargs(opts))
         self._manager.setModuleInitProc(self.moduleInit)
         self._manager.activateManager()
@@ -406,9 +294,8 @@ class VoiceSegmentRTCManager:
     def moduleInit(self, manager):
         profile = OpenRTM_aist.Properties(defaults_str = VoiceSegmentRTC_spec)
         manager.registerFactory(profile, VoiceSegmentRTC, OpenRTM_aist.Delete)
-  
-        for a in self._grammars:
-            self._comp[a] = manager.createComponent("VoiceSegmentRTC?exec_cxt.periodic.rate=1")
+
+        self._comp = manager.createComponent("VoiceSegmentRTC?exec_cxt.periodic.rate=1")
 
 #
 #  Main
