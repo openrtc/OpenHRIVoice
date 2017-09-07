@@ -169,7 +169,7 @@ class GoogleSpeechRecogWrap(object):
             request = urllib2.Request(url, data=voice_data, headers=headers)
             result = urllib2.urlopen(request)
             response = result.read()
-            print response
+            #print response.decode('utf-8')
             return response.decode('utf-8').split()
         except:
             print url
