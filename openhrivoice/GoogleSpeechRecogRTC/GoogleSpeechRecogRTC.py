@@ -199,7 +199,7 @@ GoogleSpeechRecogRTC_spec = ["implementation_id", "GoogleSpeechRecogRTC",
 		  "conf.__widget__.min_buflen", "text",
                   "conf.__type__.min_buflen", "int",
 
-		  "conf.default.min_silence", "200",
+		  "conf.default.min_silence", "150",
 		  "conf.__widget__.min_silence", "text",
                   "conf.__type__.min_silence", "int",
 
