@@ -89,11 +89,34 @@ class OpenJTalkWrap(VoiceSynthBase):
         self._conf = config()
         self._args = ()
 
+        self._sampling_rate = 0
+        self._frame_period = 0
+        self._all_pass = -1
+        self._postfiltering_coefficent = 0.0
+        self._speed_rate = 1.0
+        self._addtional_half_tone = 0.0
+        self._threshold = 0.5
+        self._gv_spectrum = 1.0
+        self._gv_log_f0 = 1.0
+        self._volume = 0.0
+
         if prop.getProperty("openjtalk.3rdparty_dir") :
             self._conf.openjtalk(prop.getProperty("openjtalk.3rdparty_dir"))
 
+        if prop.getProperty("openjtalk.top_dir") :
+            self._conf.openjtalk_top(prop.getProperty("openjtalk.top_dir"))
+
+        if prop.getProperty("openjtalk.sox_dir") :
+            self._conf.sox_top(prop.getProperty("openjtalk.sox_dir"))
+
         openjtalk_bin=prop.getProperty("openjtalk.bin")
         if not openjtalk_bin : openjtalk_bin = self._conf._openjtalk_bin
+
+        if prop.getProperty("openjtalk.phonemodel_male_ja") :
+            self._conf._openjtalk_phonemodel_male_ja=prop.getProperty("openjtalk.phonemodel_male_ja")
+
+        if prop.getProperty("openjtalk.phonemodel_female_ja") :
+            self._conf._openjtalk_phonemodel_female_ja=prop.getProperty("openjtalk.phonemodel_female_ja")
 
         cmdarg = [ openjtalk_bin ]
         (stdoutstr, stderrstr) = subprocess.Popen(cmdarg, stdout = subprocess.PIPE, stderr = subprocess.PIPE).communicate()
@@ -136,8 +159,42 @@ class OpenJTalkWrap(VoiceSynthBase):
         #cmdarg.extend(["-z", "2000"])
         #
         #  sampling rate
-        #if samplerate > 0:
-        #    cmdarg.extend(["-s", str(samplerate)])
+        if self._sampling_rate > 0:
+            cmdarg.extend(["-s", str(self._sampling_rate)])
+
+        #   all-pass constant 
+        if self._all_pass >= 0.0 and self._all_pass <= 1.0:
+            cmdarg.extend(["-a", str(self._all_pass)])
+
+        #   postfiltering coefficient  
+        if self._postfiltering_coefficent >= 0.0 and self._postfiltering_coefficent <= 1.0:
+            cmdarg.extend(["-b", str(self._postfiltering_coefficent)])
+
+        #
+        #
+        #  speech speed rate
+        if self._speed_rate > 0:
+            cmdarg.extend(["-r", str(self._speed_rate)])
+
+        #  additional half-tone
+        cmdarg.extend(["-fm", str(self._addtional_half_tone)])
+
+        #   voiced/unvoiced threshold
+        if self._threshold >= 0.0 and self._threshold <= 1.0:
+            cmdarg.extend(["-u", str(self._threshold)])
+
+        #  weight of GV for spectrum
+        if self._gv_spectrum >= 0.0:
+            cmdarg.extend(["-jm", str(self._gv_spectrum)])
+
+        #  weight of GV for log F0
+        if self._gv_log_f0 >= 0.0:
+            cmdarg.extend(["-jf", str(self._gv_log_f0)])
+
+        #  volume (dB) 
+        cmdarg.extend(["-g", str(self._volume)])
+
+
         #
         # dictionary directory
         cmdarg.extend(["-x", self._conf._openjtalk_dicfile_ja])
@@ -148,6 +205,7 @@ class OpenJTalkWrap(VoiceSynthBase):
         # text file(input)
         cmdarg.append(textfile)
 
+        print ' '.join(cmdarg)
         # run OpenJTalk
         #    String ---> Wav data
         p = subprocess.Popen(cmdarg)
@@ -171,6 +229,25 @@ class OpenJTalkWrap(VoiceSynthBase):
         os.remove(logfile)
         return (durationdata, wavfile)
 
+    #
+    #  set cachesize
+    #
+    def set_cachesize(self, n):
+        self._cachesize = n
+
+    #
+    #  set params
+    #
+    def set_params(self, rtc):
+        self._sampling_rate = int(rtc._sampling_rate[0])
+        self._all_pass = float(rtc._all_pass[0])
+        self._postfiltering_coefficent = float(rtc._postfiltering_coefficent[0])
+        self._speed_rate = float(rtc._speed_rate[0])
+        self._addtional_half_tone = float(rtc._addtional_half_tone[0])
+        self._threshold = float(rtc._threshold[0])
+        self._gv_spectrum = float(rtc._gv_spectrum[0])
+        self._gv_log_f0 = float(rtc._gv_log_f0[0])
+        self._volume = float(rtc._volume[0])
     #
     #  terminated
     #
@@ -201,6 +278,36 @@ OpenJTalkRTC_spec = ["implementation_id", "OpenJTalkRTC",
                      "conf.__widget__.character", "radio",
                      "conf.__constraints__.character", "(male, female)",
                      "conf.__description__.character", _("Character of the voice.").encode('UTF-8'),
+                     "conf.default.cachesize", "1",
+                     "conf.__widget__.cachesize", "text",
+                     "conf.__type__.cachesize", "int",
+                     "conf.default.sampling_rate", "0",
+                     "conf.__widget__.samplig_rate", "text",
+                     "conf.__type__.samplig_rate", "int",
+                     "conf.default.all_pass", "-1.0",
+                     "conf.__widget__.all_pass", "text",
+                     "conf.__type__.all_pass", "float",
+                     "conf.default.postfiltering_coefficent", "0.0",
+                     "conf.__widget__.postfiltering_coefficent", "text",
+                     "conf.__type__.postfiltering_coefficent", "float",
+                     "conf.default.speed_rate", "1.0",
+                     "conf.__widget__.speed_rate", "text",
+                     "conf.__type__.speed_rate", "float",
+                     "conf.default.half_tone", "0.0",
+                     "conf.__widget__.half_tone", "text",
+                     "conf.__type__.half_tone", "float",
+                     "conf.default.voice_unvoice_threshold", "0.5",
+                     "conf.__widget__.voice_unvoice_threshold", "text",
+                     "conf.__type__.voice_unvoice_threshold", "float",
+                     "conf.default.gv_spectrum", "1.0",
+                     "conf.__widget__.gv_spectrum", "text",
+                     "conf.__type__.gv_spectrum", "float",
+                     "conf.default.gv_log_f0", "1.0",
+                     "conf.__widget__.gv_log_f0", "text",
+                     "conf.__type__.gv_log_f0", "float",
+                     "conf.default.volume", "0.0",
+                     "conf.__widget__.volume", "text",
+                     "conf.__type__.volume", "float",
                      ""]
 #
 #  OpenJTalkRTC class
@@ -218,6 +325,36 @@ class OpenJTalkRTC(VoiceSynthComponentBase):
     def onInitialize(self):
         VoiceSynthComponentBase.onInitialize(self)
 
+        self._cachesize=[1]
+        self.bindParameter("cachesize", self._cachesize, "1")
+
+        self._sampling_rate=[0]
+        self.bindParameter("sampling_rate", self._sampling_rate, "0")
+        self._all_pass = [-1.0]
+        self.bindParameter("all_pass", self._all_pass, "-1.0")
+
+        self._postfiltering_coefficent = [0.0]
+        self.bindParameter("postfiltering_coefficent", self._postfiltering_coefficent, "0.0")
+
+        self._speed_rate=[1.0]
+        self.bindParameter("speed_rate", self._speed_rate, "1.0")
+
+        self._addtional_half_tone = [0.0,]
+        self.bindParameter("half_tone", self._addtional_half_tone, "0.0")
+
+        self._threshold = [0.5,]
+        self.bindParameter("voice_unvoice_threshold", self._threshold, "0.5")
+
+        self._gv_spectrum = [1.0,]
+        self.bindParameter("gv_spectrum", self._gv_spectrum, "1.0")
+
+        self._gv_log_f0 = [1.0,]
+        self.bindParameter("gv_log_f0", self._gv_log_f0, "1.0")
+
+        self._volume = [0.0]
+        self.bindParameter("volume", self._volume, "0.0")
+
+
         self._wrap = OpenJTalkWrap(self._properties)
         self._logger.RTC_INFO("This component depends on following softwares and datas:")
         self._logger.RTC_INFO('')
@@ -226,7 +363,23 @@ class OpenJTalkRTC(VoiceSynthComponentBase):
                 self._logger.RTC_INFO('  '+l)
             self._logger.RTC_INFO('')
         return RTC.RTC_OK
+    #
+    #
+    #
+    def onActivated(self, ec_id):
+        self._wrap.set_params(self)
+        self._wrap.set_cachesize(int(self._cachesize[0]))
 
+        VoiceSynthComponentBase.onActivated(self, ec_id)
+        return RTC.RTC_OK
+    #
+    #  OnData (callback function)
+    #
+    def onData(self, name, data):
+        self._wrap.set_params(self)
+
+        VoiceSynthComponentBase.onData(self, name, data)
+        return RTC.RTC_OK
 #
 #  OpenJTalkRTC Manager class
 #

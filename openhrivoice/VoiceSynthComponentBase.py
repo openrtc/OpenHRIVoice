@@ -159,6 +159,9 @@ class VoiceSynthComponentBase(OpenRTM_aist.DataFlowComponentBase):
         self._character = ["male",]
         self.bindParameter("character", self._character, "male")
 
+        self._sampling_rate = [0,]
+        self.bindParameter("sampling_rate", self._sampling_rate, 0)
+
         # create inport
         self._indata = RTC.TimedString(RTC.Time(0,0), "")
         self._inport = OpenRTM_aist.InPort("text", self._indata)
@@ -203,7 +206,7 @@ class VoiceSynthComponentBase(OpenRTM_aist.DataFlowComponentBase):
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
         self._is_active = True
         return RTC.RTC_OK
-        return RTC.RTC_OK
+
     #
     #  OnDeactivate
     #

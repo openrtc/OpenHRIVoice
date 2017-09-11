@@ -117,11 +117,47 @@ class config():
         self.sox(basedir)
 
     #
+    #   For OpenJTalk
+    #
+    def openjtalk_top(self, topdir):
+        if self._platform == "Windows":
+            self._openjtalk_dir = topdir
+            self._openjtalk_bin = os.path.join(self._openjtalk_dir, "bin", "open_jtalk.exe")
+            self._openjtalk_phonemodel_male_ja =  os.path.join(self._openjtalk_dir, "share", "hts_voice_nitech_jp_atr503_m001-1.05", "nitech_jp_atr503_m001.htsvoice")
+            self._openjtalk_phonemodel_female_ja =  os.path.join(self._openjtalk_dir,"share", "mei", "mei_normal.htsvoice")
+            self._openjtalk_dicfile_ja = os.path.join(self._openjtalk_dir, "dic")
+
+        else:
+            #harumi 2015_01_14 change with 3rdparty setting
+            if ubuntu_osname == "precise":
+                self._openjtalk_phonemodel_male_ja = "/usr/local/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"
+            else:
+                self._openjtalk_phonemodel_male_ja = "/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"
+                
+                #self._openjtalk_dicfile_ja = "/usr/local/share/open_jtalk/dic/utf-8"
+
+
+            self._openjtalk_dicfile_ja = "/var/lib/mecab/dic/open-jtalk/naist-jdic"
+            self._openjtalk_phonemodel_female_ja = "/usr/local/lib/mmdagent/voice/mei_normal"
+            self._openjtalk_bin = "open_jtalk"
+
+
+    #
     #  For SOX
     #
     def sox(self, basedir):
         if self._platform == "Windows":
             self._soxdir = os.path.join(basedir, "sox-14.4.2")
+            self._sox_bin = os.path.join(self._soxdir, "sox.exe")
+        else:
+            self._sox_bin = "sox"
+
+    #
+    #  For SOX
+    #
+    def sox_top(self, topdir):
+        if self._platform == "Windows":
+            self._soxdir = topdir
             self._sox_bin = os.path.join(self._soxdir, "sox.exe")
         else:
             self._sox_bin = "sox"
