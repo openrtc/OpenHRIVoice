@@ -52,6 +52,9 @@ class FestivalWrap(VoiceSynthBase):
         if prop.getProperty("festival.3rdparty_dir") :
             self._config.festival(prop.getProperty("festival.3rdparty_dir"))
 
+        if prop.getProperty("festival.top_dir") :
+            self._config.festival_top(prop.getProperty("festival.top_dir"))
+
         self._cmdline =[self._config._festival_bin, '--pipe']
         self._cmdline.extend(self._config._festival_opt)
         self._copyrights = []

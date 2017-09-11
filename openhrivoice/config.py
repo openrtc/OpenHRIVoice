@@ -167,8 +167,6 @@ class config():
     #
     def festival(self, basedir):
         if self._platform == "Windows":
-            #harumi 2014_12_04 change with a change in the folder structure of festival.
-            #self._festivaldir = os.path.join(basedir, "festival-1.96.03-win", "festival")
             self._festivaldir = os.path.join(basedir, "festival-2.4")
 
             self._festival_bin = os.path.join(self._festivaldir, "festival.exe")
@@ -176,3 +174,13 @@ class config():
         else:
             self._festival_bin = "festival"
             self._festival_opt = []
+
+    def festival_top(self, topdir):
+        if self._platform == "Windows":
+            self._festivaldir = topdir
+            self._festival_bin = os.path.join(self._festivaldir, "festival.exe")
+            self._festival_opt = ["--libdir", os.path.join(self._festivaldir, "lib")]
+        else:
+            self._festival_bin = "festival"
+            self._festival_opt = []
+
