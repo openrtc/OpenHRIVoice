@@ -84,6 +84,7 @@ class JuliusWrap(threading.Thread):
         self._lang = language
         self._memsize = "large"
         #self._memsize = "medium"
+
         self._logdir = tempfile.mkdtemp()
         self._callbacks = []
         self._grammars = {}
@@ -99,6 +100,10 @@ class JuliusWrap(threading.Thread):
 
         self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._audiohost = "localhost"
+        self._audioport = 0
+        self._modulehost = "localhost"
+        self._moduleport = 0
 
         if rtc :
             self._mode = rtc._mode
@@ -118,7 +123,7 @@ class JuliusWrap(threading.Thread):
         self._cmdline.append(self._config._julius_bin)
 
         ###########################################################
-        #  Opntion Setting
+        #  Parameter set for Julius
         #
         ###########################################################
         if self._mode == 'dictation' :
@@ -192,23 +197,77 @@ class JuliusWrap(threading.Thread):
 
         self._running = True
         self._p = subprocess.Popen(self._cmdline)
+
+
+        #
+        #   Connect to Julius
+        time.sleep(1)
         print "connecting to ports"
         for retry in range(0, 10):
+            if self.connect_to_julius
             try:
-                self._modulesocket.connect(("localhost", self._moduleport))
+                self._modulesocket.connect((self._modulehost, self._moduleport))
             except socket.error:
                 time.sleep(1)
                 continue
             break
         for retry in range(0, 10):
             try:
-                self._audiosocket.connect(("localhost", self._audioport))
+                self._audiosocket.connect(( self._audiohost, self._audioport))
             except socket.error:
                 time.sleep(1)
                 continue
             break
-        self._modulesocket.sendall("INPUTONCHANGE TERMINATE\n")
+
+        #
+        # for grammar mode
+        if self._mode != 'dictation' :
+            self._modulesocket.sendall("INPUTONCHANGE TERMINATE\n")
+
         print "JuliusWrap started"
+
+    #
+    #  Connect to Julius
+    def connect_to_julius(self, host, port):
+        if not self._modulesocket :
+            self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self._modulesocket.connect((host, port))
+            self._modulehost = host
+            self._moduleport = port
+            return Ture
+        except socket.error:
+            return False
+
+    #
+    #  close Julius
+    def close_julius(self):
+        if self._modulesocket :
+            self._modulesocket.shutdow()
+            self._modulesocket.close()
+            self._modulesocket = None
+
+    #
+    #  Connect to Adinnet
+    def connect_to_adinnet(self, host, port):
+        if not self._audiosocket :
+            self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            self._audiosocket.connect((host, port))
+            self._audiohost = host
+            self._audioport = port
+            return True
+        except socket.error:
+            return False
+
+    #
+    #  close Adinnet
+    def close_adinnet(self):
+        if self._audiosocket :
+            self._audiosocket.shutdow()
+            self._audiosocket.close()
+            self._audiosocket = None
+
 
     #
     #  get unused communication port
@@ -226,8 +285,9 @@ class JuliusWrap(threading.Thread):
     def terminate(self):
         print 'JuliusWrap: terminate'
         self._running = False
-        self._audiosocket.close()
-        self._modulesocket.close()
+        self.close_adinnet()
+        self.close_julius()
+
         self._p.terminate()
         return 0
 
@@ -240,7 +300,7 @@ class JuliusWrap(threading.Thread):
             self._audiosocket.sendall(data)
         except socket.error:
             try:
-                self._audiosocket.connect(("localhost", self._audioport))
+                self._audiosocket.connect((_audiohost, self._audioport))
             except:
                 pass
         return 0
@@ -458,7 +518,8 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logport.appendProperty('description', _('Log of audio data.').encode('UTF-8'))
         self.registerOutPort(self._logport._name, self._logport)
 
-
+        #
+        # Parameters
         self._jconf_file=["main.jconf"]
         self.bindParameter("jconf_file", self._jconf_file, "main.jconf")
 
