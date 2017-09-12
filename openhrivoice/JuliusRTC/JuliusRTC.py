@@ -154,7 +154,7 @@ class JuliusWrap(threading.Thread):
             self._cmdline.extend(["-rejectshort", "200"])
             self._cmdline.extend(["-penalty1", "5.0", "-penalty2", "20.0"]) # (文法使用時) 第1,2パス用の単語挿入ペナルティ
 
-        self._cmdline.extend(["-pausesegment"]) # レベル・零交差による音声区間検出の強制ON
+        self._cmdline.extend(["-pausesegment"])         # レベル・零交差による音声区間検出の強制ON
         self._cmdline.extend(["-nostrip"])              # ゼロ続きの無効な入力部の除去をOFFにする
         self._cmdline.extend(["-spmodel", "sp"])        # ショートポーズ音響モデルの名前
         self._cmdline.extend(["-iwcd1", "max"])         # 第1パスの単語間トライフォン計算法を指定する．(同じコンテキストのトライフォン集合の全尤度の最大値を近似尤度として用いる)
@@ -169,7 +169,7 @@ class JuliusWrap(threading.Thread):
         self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)]) # 入力の設定（adinport使用）
         self._cmdline.extend(["-module", str(self._moduleport)])                       # module mode
     
-        #self._cmdline.extend(["-nolog"])                # ログ出力を禁止
+        #self._cmdline.extend(["-nolog"])               # ログ出力を禁止
 
         #####################################################
 
