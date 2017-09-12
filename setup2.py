@@ -29,6 +29,7 @@ if sys.platform == "win32":
                     "openhrivoice/OpenJTalkRTC/OpenJTalkRTC.py",
                     "openhrivoice/JuliusRTC/JuliusRTC.py",
                     "openhrivoice/FestivalRTC/FestivalRTC.py",
+                    "openhrivoice/GoogleSpeechRecogRTC/GoogleSpeechRecogRTC.py",
                     ],
         "options": {
             "py2exe": {

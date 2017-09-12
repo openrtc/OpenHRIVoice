@@ -401,7 +401,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._lang = 'en'
         self._srgs = None
         self._j = None
-        self._mode = 'grammara'
+        self._mode = 'grammar'
         self._config = config()
 
         self._copyrights = []
