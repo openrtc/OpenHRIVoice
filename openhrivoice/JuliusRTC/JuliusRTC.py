@@ -42,6 +42,29 @@ except:
 
 __doc__ = _('Julius (English and Japanese) speech recognition component.')
 
+'''
+Dictation-kit
+main.jconf:
+  -d model/lang_m/bccwj.60k.bingram  # 単語2-gram,3-gramファイル(バイナリ形式）
+  -v model/lang_m/bccwj.60k.htkdic   # 単語辞書ファイル
+  -b 1500                            # 第1パスのビーム幅（ノード数
+  -b2 100                            # 第2パスの仮説数ビームの幅（仮説数）
+  -s 500                             # 第2パスの最大スタック数 (仮説数)
+  -m 10000                           # 第2パスの仮説オーバフローのしきい値
+  -n 30                              # 第2パスで見つける文の数（文数）
+  -output 1                          # 第2パスで見つかった文のうち出力する数 （文数）
+  -zmeanframe                        # フレーム単位のDC成分除去を行う (HTKと同処理)
+  -rejectshort 800                   # 指定ミリ秒以下の長さの入力を棄却する
+  
+am-gmm.jconf
+  -h model/phone_m/jnas-tri-3k16-gid.binhmm    # 音響HMM定義ファイル
+  -hlist model/phone_m/logicalTri-3k16-gid.bin # 論理的に出現しうる triphone -> 定義されている triphoneの対応を指定した「HMMListファイル」
+  -lmp  10 0  # 言語重みと挿入ペナルティ: 第1パス(2-gram)
+  -lmp2 10 0  # 言語重みと挿入ペナルティ: 第2パス(3-gram)
+
+
+'''
+
 #
 #  Julius Wrappper
 #
@@ -89,14 +112,13 @@ class JuliusWrap(threading.Thread):
         #
         ###########################################################
         if self._mode == 'dictation' :
+            # dictation-kit-v4.4(GMM版デフォルトパラメータ）ただし、outputを5に変更
             self._cmdline.extend(['-d',     self._config._julius_bingram_ja])
             self._cmdline.extend(['-v',     self._config._julius_htkdic_ja])
             self._cmdline.extend(['-h',     self._config._julius_hmm_ja])
             self._cmdline.extend(['-hlist', self._config._julius_hlist_ja])
             self._cmdline.extend(["-b", "1500", "-b2", "100", "-s", "500" ,"-m", "10000"])
-            self._cmdline.extend(["-n", "30", "-output", "5", "-zmeanframe", "-rejectshort" ,"800", "-lmp", '10.0' ,'0', '-lmp2', '10', '0'])
-            self._cmdline.extend(["-pausesegment"])
-
+            self._cmdline.extend(["-n", "30", "-output", "5", "-zmeanframe", "-rejectshort" ,"800", "-lmp", '10' ,'0', '-lmp2', '10', '0'])
         else:
             #
             #  Japanese
@@ -129,24 +151,25 @@ class JuliusWrap(threading.Thread):
                 self._cmdline.extend(["-b", "-1", "-b2", "80", "-s", "500" ,"-m", "1000"])
     
             self._cmdline.extend(["-n", "5", "-output", "5"])
+            self._cmdline.extend(["-rejectshort", "200"])
+            self._cmdline.extend(["-penalty1", "5.0", "-penalty2", "20.0"]) # (文法使用時) 第1,2パス用の単語挿入ペナルティ
 
-            self._cmdline.extend(["-pausesegment", "-rejectshort", "200"])
-
-        self._cmdline.extend(["-nostrip"])
-    
-        self._cmdline.extend(["-spmodel", "sp"])
-        self._cmdline.extend(["-penalty1", "5.0", "-penalty2", "20.0", "-iwcd1", "max", "-gprune", "safe"])
-        self._cmdline.extend(["-forcedict"])
-        self._cmdline.extend(["-record", self._logdir])
-        self._cmdline.extend(["-smpFreq", "16000"])
+        self._cmdline.extend(["-pausesegment"]) # レベル・零交差による音声区間検出の強制ON
+        self._cmdline.extend(["-nostrip"])              # ゼロ続きの無効な入力部の除去をOFFにする
+        self._cmdline.extend(["-spmodel", "sp"])        # ショートポーズ音響モデルの名前
+        self._cmdline.extend(["-iwcd1", "max"])         # 第1パスの単語間トライフォン計算法を指定する．(同じコンテキストのトライフォン集合の全尤度の最大値を近似尤度として用いる)
+        self._cmdline.extend(["-gprune", "safe"])       # safe pruning 上位N個が確実に求まる．正確．
+        self._cmdline.extend(["-forcedict"])            # エラー単語を無視して続行する
+        self._cmdline.extend(["-record", self._logdir]) # 認識した音声データを連続したファイルに自動保存
+        self._cmdline.extend(["-smpFreq", "16000"])     # サンプリング周波数(Hz)
     
         self._audioport = self.getunusedport()
         self._moduleport = self.getunusedport()
     
-        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)])
-        self._cmdline.extend(["-module", str(self._moduleport)])
+        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)]) # 入力の設定（adinport使用）
+        self._cmdline.extend(["-module", str(self._moduleport)])                       # module mode
     
-        #self._cmdline.extend(["-nolog"])
+        #self._cmdline.extend(["-nolog"])                # ログ出力を禁止
 
         #####################################################
 
