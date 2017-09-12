@@ -89,6 +89,46 @@ class config():
         # for dictation
         self._julius_bingram_ja= os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
         self._julius_htkdic_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
+
+    #
+    #  For Julius
+    #
+    def julius_runkit(self, runkit_dir):
+        if self._platform == "Windows":
+            self._julius_runkitdir = runkit_dir
+            self._julius_bin = os.path.join(self._julius_runkitdir, "bin", "windows", "julius.exe")
+        else:
+	    self._julius_runkitdir = runkit_dir
+
+        self._julius_hmm_ja   = os.path.join(self._julius_runkitdir, "model", "phone_m", "jnas-tri-3k16-gid.binhmm")
+        self._julius_hlist_ja = os.path.join(self._julius_runkitdir, "model", "phone_m", "logicalTri-3k16-gid.bin")
+        self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
+        self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
+        #
+        # for dictation
+        self._julius_bingram_ja= os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
+        self._julius_htkdic_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
+
+    def julius_voxforge(self, basedir):
+        if self._platform == "Windows":
+            self._julius_voxforgedir = basedir
+            self._julius_hmm_en = os.path.join(self._julius_voxforgedir, "hmmdefs")
+            self._julius_hlist_en = os.path.join(self._julius_voxforgedir, "tiedlist")
+            self._julius_dict_en = os.path.join(self._julius_voxforgedir, "dict")
+
+        else:
+            if ubuntu_osname == "precise":
+                self._julius_dict_en = "/usr/share/doc/julius-voxforge/dict.gz"
+            else:
+                self._julius_dict_en = "/usr/share/julius-voxforge/acoustic/dict"
+            self._julius_voxforgedir = "/usr/share/julius-voxforge"
+            self._julius_voxforgedir_de = "/usr/share/julius-voxforge-de"
+	    self._julius_bin = "/usr/bin/julius"
+            self._julius_hmm_en = os.path.join(self._julius_voxforgedir, "acoustic", "hmmdefs")
+            self._julius_hlist_en = os.path.join(self._julius_voxforgedir, "acoustic", "tiedlist")
+            self._julius_hmm_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "hmmdefs")
+            self._julius_hlist_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "tiedlist")
+
     #
     #   For OpenJTalk
     #

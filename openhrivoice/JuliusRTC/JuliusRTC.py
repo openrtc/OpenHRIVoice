@@ -91,6 +91,8 @@ class JuliusWrap(threading.Thread):
         self._activegrammars = {}
         self._prevdata = ''
 
+        self._jconf_file = ""
+
         self._mode = 'grammar'
         #self._jcode = 'euc_jp'
         self._jcode = 'utf-8'
@@ -103,6 +105,14 @@ class JuliusWrap(threading.Thread):
             prop = rtc._properties
             if prop.getProperty("julius.3rdparty_dir") :
                 self._config.julius(prop.getProperty("julius.3rdparty_dir"))
+
+            if prop.getProperty("julius.runkit_dir") :
+                self._config.julius_runkit(prop.getProperty("julius.runkit_dir"))
+            if prop.getProperty("julius.voxforge_dir") :
+                self._config.julius_voxforge(prop.getProperty("julius.voxforge_dir"))
+
+            if os.path.isfile(rtc._jconf_file[0]) :
+                self._jconf_file = rtc._jconf_file[0]
 
         self._cmdline = []
         self._cmdline.append(self._config._julius_bin)
@@ -162,13 +172,17 @@ class JuliusWrap(threading.Thread):
         self._cmdline.extend(["-forcedict"])            # エラー単語を無視して続行する
         self._cmdline.extend(["-record", self._logdir]) # 認識した音声データを連続したファイルに自動保存
         self._cmdline.extend(["-smpFreq", "16000"])     # サンプリング周波数(Hz)
-    
+
+
         self._audioport = self.getunusedport()
+        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)]) # 入力の設定（adinport使用)
+
+        if self._jconf_file :
+            self._cmdline.extend(["-C", self._jconf_file]) # overwrite parameters by jconf file.
+
         self._moduleport = self.getunusedport()
-    
-        self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)]) # 入力の設定（adinport使用）
         self._cmdline.extend(["-module", str(self._moduleport)])                       # module mode
-    
+
         #self._cmdline.extend(["-nolog"])               # ログ出力を禁止
 
         #####################################################
@@ -352,6 +366,9 @@ JuliusRTC_spec = ["implementation_id", "JuliusRTC",
                   "conf.__descirption__.voiceactivitydetection", _("Specify voice activity detection trigger (fixed to internal).").encode('UTF-8'),
                   "conf.__widget__.voiceactivitydetection", "radio",
                   "conf.__constraints__.voiceactivitydetection", "(internal)",
+                  "conf.default.jconf_file", "main.jconf",
+                  "conf.__widget__.jconf_file", "text",
+
                   ""]
 #
 #  DataListener class for JuliusRTC
@@ -441,6 +458,10 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logport.appendProperty('description', _('Log of audio data.').encode('UTF-8'))
         self.registerOutPort(self._logport._name, self._logport)
 
+
+        self._jconf_file=["main.jconf"]
+        self.bindParameter("jconf_file", self._jconf_file, "main.jconf")
+
         self._logger.RTC_INFO("This component depends on following softwares and datas:")
         self._logger.RTC_INFO('')
         for c in self._copyrights:
@@ -470,6 +491,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
             self._lang = 'ja'
         else:
             self._lang = self._srgs._lang
+
         self._j = JuliusWrap(self._lang, self)
         self._j.start()
         self._j.setcallback(self.onResult)
