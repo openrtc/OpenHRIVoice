@@ -188,8 +188,6 @@ class JuliusWrap(threading.Thread):
         self._moduleport = self.getunusedport()
         self._cmdline.extend(["-module", str(self._moduleport)])                       # module mode
 
-        #self._cmdline.extend(["-nolog"])               # ログ出力を禁止
-
         #####################################################
 
         print "command line: %s" % " ".join(self._cmdline)

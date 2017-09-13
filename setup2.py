@@ -30,6 +30,8 @@ if sys.platform == "win32":
                     "openhrivoice/JuliusRTC/JuliusRTC.py",
                     "openhrivoice/FestivalRTC/FestivalRTC.py",
                     "openhrivoice/GoogleSpeechRecogRTC/GoogleSpeechRecogRTC.py",
+                    "openhrivoice/XSLTRTC/XSLTRTC.py",
+                    "openhrivoice/MARYRTC/MARYRTC.py",
                     ],
         "options": {
             "py2exe": {
@@ -75,6 +77,9 @@ setup(name='openhrivoice',
       openjtalkrtc = openhrivoice.OpenJTalkRTC.OpenJTalkRTC:main
       juliusrtc = openhrivoice.JuliusRTC.JuliusRTC:main
       festivalrtc = openhrivoice.FestivalRTC.FestivalRTC:main
+      googlespeechrecogrtc = openhrivoice.GoogleSpeechRecogRTC:main
+      xlstrtc = openhrivoice.XSLTRTC:main
+      maryrtc = openhrivoice.MARYRTC:main
       """,
       **extra
       )

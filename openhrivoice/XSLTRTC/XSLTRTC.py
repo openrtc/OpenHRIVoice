@@ -65,6 +65,7 @@ class XSLTRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logger = OpenRTM_aist.Manager.instance().getLogbuf(self._properties.getProperty("instance_name"))
         self._logger.RTC_INFO("XSLTRTC version " + __version__)
         self._logger.RTC_INFO("Copyright (C) 2010-2011 Yosuke Matsusaka")
+
         # create inport
         self._indata = RTC.TimedString(RTC.Time(0,0), "")
         self._inport = OpenRTM_aist.InPort("text", self._indata)
@@ -72,6 +73,7 @@ class XSLTRTC(OpenRTM_aist.DataFlowComponentBase):
         self._inport.addConnectorDataListener(OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
                                               DataListener("ON_BUFFER_WRITE", self))
         self.registerInPort(self._inport._name, self._inport)
+
         # create outport for audio stream
         self._outdata = RTC.TimedString(RTC.Time(0,0), "")
         self._outport = OpenRTM_aist.OutPort("result", self._outdata)

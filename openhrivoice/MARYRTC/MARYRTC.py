@@ -27,6 +27,7 @@ import OpenRTM_aist
 import RTC
 from openhrivoice.__init__ import __version__
 from openhrivoice import utils
+from openhrivoice.config import config
 from openhrivoice.VoiceSynthComponentBase import *
 try:
     import gettext
@@ -37,36 +38,62 @@ except:
 __doc__ = _('German speech synthesis component using MARY.')
 
 class MARYTalkWrap(VoiceSynthBase):
-    def __init__(self):
+    def __init__(self, rtc):
         VoiceSynthBase.__init__(self)
-        self._baseurl = "http://localhost:59125/"
+        self._conf = config()
+
+        prop = rtc._properties
+        if prop.getProperty("mary.sox_dir") :
+            self._conf.sox_top(prop.getProperty("mary.sox_dir"))
+
+        self._lang = rtc._language
+        self.set_url(rtc._manytts_server [0])
+
+    def set_url(self, url):
+        self._baseurl = "http://"+url+"/"
         self._voice_type = {}
+        print self._baseurl
         voiceinfo = urllib.urlopen(self._baseurl + 'voices').readlines()
+        print voiceinfo
         for v in voiceinfo:
             (id, lang, gender, type) = v.strip().split(' ', 3)
-            if lang == 'de':
+            if lang == self._lang:
                 self._voice_type[gender] = id
-            
+
+        print self._voice_type
+
     def getaudio(self, data, character):
         query = [
                  ('INPUT_TYPE', 'TEXT'),
                  ('OUTPUT_TYPE', 'AUDIO'),
-                 ('AUDIO', 'WAVE'),
-                 ('LOCALE', 'de'),
+                 ('AUDIO', 'WAVE_FILE'),
+                 ('LOCALE', self._lang),
                  ('VOICE', self._voice_type[character]),
                  ('INPUT_TEXT', data.encode('utf-8')),
                  ]
         maryurl = self._baseurl + 'process?' + urllib.urlencode(query)
         wavfile = self.gettempname()
         urllib.urlretrieve(maryurl, wavfile)
+
+        #
+        # convert samplerate
+        # normally openjtalk outputs 48000Hz sound.
+        wavfile2 = self.gettempname()
+        cmdarg = [self._conf._sox_bin, "-t", "wav", wavfile, "-r", "16000", "-t", "wav", wavfile2]
+        p = subprocess.Popen(cmdarg)
+        p.wait()
+
+        os.remove(wavfile)
+        wavfile = wavfile2
+
         return wavfile
 
     def getdurations(self, data, character):
         query = [
                  ('INPUT_TYPE', 'TEXT'),
                  ('OUTPUT_TYPE', 'REALISED_DURATIONS'),
-                 ('AUDIO', 'WAVE'),
-                 ('LOCALE', 'de'),
+                 ('AUDIO', 'WAVE_FILE'),
+                 ('LOCALE', self._lang),
                  ('VOICE', self._voice_type[character]),
                  ('INPUT_TEXT', data.encode('utf-8')),
                  ]
@@ -105,6 +132,10 @@ MARYRTC_spec = ["implementation_id", "MARYRTC",
                 "conf.__widget__.character", "radio",
                 "conf.__constraints__.character", "(male, female)",
                 "conf.__description__.character", "Character of the voice.",
+                "conf.default.manytts_server", "localhost:59125",
+                "conf.__widget__.manytts_server", "text",
+                "conf.default.language", "de",
+                "conf.__widget__.language", "text",
                 ""]
 
 class MARYRTC(VoiceSynthComponentBase):
@@ -113,12 +144,28 @@ class MARYRTC(VoiceSynthComponentBase):
 
     def onInitialize(self):
         VoiceSynthComponentBase.onInitialize(self)
+        self._manytts_server = ["localhost:59125"]
+        self.bindParameter("manytts_server", self._manytts_server, "localhost:59125")
+        self._language = ["de"]
+        self.bindParameter("language", self._language, "de")
+
+        self._wrap = None
+
+        return RTC.RTC_OK
+
+    #
+    #
+    #
+    def onActivated(self, ec_id):
         try:
-            self._wrap = MARYTalkWrap()
+            self._wrap = MARYTalkWrap(self)
         except:
             self._logger.RTC_ERROR(traceback.format_exc())
             return RTC.RTC_ERROR
+
+        VoiceSynthComponentBase.onActivated(self, ec_id)
         return RTC.RTC_OK
+
 
 class MARYRTCManager:
     def __init__(self):
