@@ -393,13 +393,16 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
             try:
                 data.pop(0)
                 res = ''.join(data)
-
+                #print res;
                 result=json.loads(res)
                 i=0
                 for r in result['result'][0]['alternative']:
                     i += 1
                     rank = str(i)
-                    score=str(r['confidence'])
+                    if 'confidence' in r :
+                        score=str(r['confidence'])
+                    else:
+                        score=0.0
                     text=r['transcript']
                     hypo = doc.createElement("data")
                     hypo.setAttribute("rank", rank)

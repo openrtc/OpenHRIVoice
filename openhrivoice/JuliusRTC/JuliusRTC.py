@@ -202,7 +202,6 @@ class JuliusWrap(threading.Thread):
         time.sleep(1)
         print "connecting to ports"
         for retry in range(0, 10):
-            if self.connect_to_julius
             try:
                 self._modulesocket.connect((self._modulehost, self._moduleport))
             except socket.error:
