@@ -1,11 +1,11 @@
 
--h 3rdparty\dictation-kit-v4.4\model\dnn\binhmm.SID
--hlist 3rdparty\dictation-kit-v4.4\model\dnn\logicalTri.bin
--v 3rdparty\dictation-kit-v4.4\model\lang_m\bccwj.60k.pdp.htkdic
+-h C:\local\dictation-kit-v4.4\model\dnn\binhmm.SID
+-hlist C:\local\dictation-kit-v4.4\model\dnn\logicalTri.bin
+-v C:\local\dictation-kit-v4.4\model\lang_m\bccwj.60k.pdp.htkdic
 
 -lmp  14 0
 -lmp2 14 0
 
 -input mic
--dnnconf 3rdparty\dictation-kit-v4.4\julius.dnnconf
+-dnnconf C:\local\dictation-kit-v4.4\julius.dnnconf
 

@@ -240,7 +240,7 @@ class JuliusWrap(threading.Thread):
     #  close Julius
     def close_julius(self):
         if self._modulesocket :
-            self._modulesocket.shutdow()
+            self._modulesocket.shutdown()
             self._modulesocket.close()
             self._modulesocket = None
 
@@ -261,7 +261,7 @@ class JuliusWrap(threading.Thread):
     #  close Adinnet
     def close_adinnet(self):
         if self._audiosocket :
-            self._audiosocket.shutdow()
+            self._audiosocket.shutdown()
             self._audiosocket.close()
             self._audiosocket = None
 
