@@ -74,7 +74,7 @@ class config():
                 self._julius_dict_en = "/usr/share/julius-voxforge/acoustic/dict"
             self._julius_voxforgedir = "/usr/share/julius-voxforge"
             self._julius_voxforgedir_de = "/usr/share/julius-voxforge-de"
-	    self._julius_bin = "/usr/bin/julius"
+	    self._julius_bin = "/usr/share/julius-runkit/bin/linux/julius"
             self._julius_hmm_en = os.path.join(self._julius_voxforgedir, "acoustic", "hmmdefs")
             self._julius_hlist_en = os.path.join(self._julius_voxforgedir, "acoustic", "tiedlist")
             self._julius_hmm_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "hmmdefs")
