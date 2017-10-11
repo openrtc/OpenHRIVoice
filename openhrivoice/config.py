@@ -28,13 +28,14 @@ from glob import glob
 from openhrivoice.__init__ import __version__
 from openhrivoice import utils
 
+
 class config():
     def __init__(self):
         self._platform = platform.system()
 
         if self._platform != "Windows":
 		my_platform_list =  platform.platform().split("-")
-		ubuntu_osname = my_platform_list[len(my_platform_list)-1]
+		self.ubuntu_osname = my_platform_list[len(my_platform_list)-1]
 
         if hasattr(sys, "frozen"):
             self._basedir = os.path.dirname(unicode(sys.executable, sys.getfilesystemencoding()))
@@ -67,14 +68,14 @@ class config():
             self._julius_dict_en = os.path.join(self._julius_voxforgedir, "dict")
 
         else:
-	    self._julius_runkitdir = "/usr/local/share/julius-runkit"
-            if ubuntu_osname == "precise":
+	    self._julius_runkitdir = "/usr/share/julius-runkit"
+            if self.ubuntu_osname == "precise":
                 self._julius_dict_en = "/usr/share/doc/julius-voxforge/dict.gz"
             else:
                 self._julius_dict_en = "/usr/share/julius-voxforge/acoustic/dict"
             self._julius_voxforgedir = "/usr/share/julius-voxforge"
             self._julius_voxforgedir_de = "/usr/share/julius-voxforge-de"
-	    self._julius_bin = "/usr/bin/julius"
+	    self._julius_bin = "/usr/share/julius-runkit/bin/linux/julius"
             self._julius_hmm_en = os.path.join(self._julius_voxforgedir, "acoustic", "hmmdefs")
             self._julius_hlist_en = os.path.join(self._julius_voxforgedir, "acoustic", "tiedlist")
             self._julius_hmm_de = os.path.join(self._julius_voxforgedir_de, "acoustic", "hmmdefs")
@@ -98,12 +99,13 @@ class config():
             self._julius_runkitdir = runkit_dir
             self._julius_bin = os.path.join(self._julius_runkitdir, "bin", "windows", "julius.exe")
         else:
-	    self._julius_runkitdir = runkit_dir
+            self._julius_runkitdir = runkit_dir
 
-        self._julius_hmm_ja   = os.path.join(self._julius_runkitdir, "model", "phone_m", "jnas-tri-3k16-gid.binhmm")
-        self._julius_hlist_ja = os.path.join(self._julius_runkitdir, "model", "phone_m", "logicalTri-3k16-gid.bin")
-        self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
-        self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
+            self._julius_bin   = os.path.join(self._julius_runkitdir, "bin", "linux", "julius")
+            self._julius_hmm_ja   = os.path.join(self._julius_runkitdir, "model", "phone_m", "jnas-tri-3k16-gid.binhmm")
+            self._julius_hlist_ja = os.path.join(self._julius_runkitdir, "model", "phone_m", "logicalTri-3k16-gid.bin")
+            self._julius_ngram_ja = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
+            self._julius_dict_ja  = os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.htkdic")
         #
         # for dictation
         self._julius_bingram_ja= os.path.join(self._julius_runkitdir, "model", "lang_m", "bccwj.60k.bingram")
@@ -117,7 +119,7 @@ class config():
             self._julius_dict_en = os.path.join(self._julius_voxforgedir, "dict")
 
         else:
-            if ubuntu_osname == "precise":
+            if self.ubuntu_osname == "precise":
                 self._julius_dict_en = "/usr/share/doc/julius-voxforge/dict.gz"
             else:
                 self._julius_dict_en = "/usr/share/julius-voxforge/acoustic/dict"
@@ -142,7 +144,7 @@ class config():
 
         else:
             #harumi 2015_01_14 change with 3rdparty setting
-            if ubuntu_osname == "precise":
+            if self.ubuntu_osname == "precise":
                 self._openjtalk_phonemodel_male_ja = "/usr/local/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"
             else:
                 self._openjtalk_phonemodel_male_ja = "/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"
@@ -169,7 +171,7 @@ class config():
 
         else:
             #harumi 2015_01_14 change with 3rdparty setting
-            if ubuntu_osname == "precise":
+            if self.ubuntu_osname == "precise":
                 self._openjtalk_phonemodel_male_ja = "/usr/local/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"
             else:
                 self._openjtalk_phonemodel_male_ja = "/usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice"

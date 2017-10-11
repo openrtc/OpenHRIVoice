@@ -97,6 +97,7 @@ def askopenfilenames(title=''):
                                    buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
                                             gtk.STOCK_OPEN, gtk.RESPONSE_OK))
     dialog.set_default_response(gtk.RESPONSE_OK)
+    
     dialog.set_select_multiple(True)
     response = dialog.run()
     if response == gtk.RESPONSE_OK:

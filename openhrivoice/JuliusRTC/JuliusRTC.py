@@ -205,14 +205,14 @@ class JuliusWrap(threading.Thread):
             try:
                 self._modulesocket.connect((self._modulehost, self._moduleport))
             except socket.error:
-                time.sleep(1)
+                time.sleep(2)
                 continue
             break
         for retry in range(0, 10):
             try:
                 self._audiosocket.connect(( self._audiohost, self._audioport))
             except socket.error:
-                time.sleep(1)
+                time.sleep(2)
                 continue
             break
 
@@ -240,7 +240,7 @@ class JuliusWrap(threading.Thread):
     #  close Julius
     def close_julius(self):
         if self._modulesocket :
-            self._modulesocket.shutdown()
+            self._modulesocket.shutdown(socket.SHUT_RDWR)
             self._modulesocket.close()
             self._modulesocket = None
 
@@ -261,7 +261,10 @@ class JuliusWrap(threading.Thread):
     #  close Adinnet
     def close_adinnet(self):
         if self._audiosocket :
-            self._audiosocket.shutdown()
+            try: 
+                self._audiosocket.shutdown(socket.SHUT_RDWR)
+            except socket.error:
+                pass
             self._audiosocket.close()
             self._audiosocket = None
 
@@ -709,6 +712,9 @@ class JuliusRTCManager:
             print >>sys.stderr, 'OptionError:', e
             sys.exit(1)
 
+        if opts.dictation_mode == True:
+            args.extend(['dictation'])
+
         if opts.guimode == True:
             sel = utils.askopenfilenames(title="select W3C-SRGS grammar files")
             if sel is not None:
@@ -718,10 +724,6 @@ class JuliusRTCManager:
             parser.error("wrong number of arguments")
             sys.exit(1)
             
-        if opts.dictation_mode == True:
-          args.extend(['dictation'])
-
-
         self._rebuid_lexicon=opts.rebuild_lexicon
 
         self._grammars = args
