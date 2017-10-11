@@ -192,7 +192,8 @@ class OpenJTalkWrap(VoiceSynthBase):
             cmdarg.extend(["-jf", str(self._gv_log_f0)])
 
         #  volume (dB) 
-        cmdarg.extend(["-g", str(self._volume)])
+        if self._conf._platform == "Windows" :
+            cmdarg.extend(["-g", str(self._volume)])
 
 
         #
