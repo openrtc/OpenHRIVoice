@@ -7,6 +7,6 @@
 
 @echo on
 
-%PYTHON_BASE%\python GoogleSpeechRecogRTC\GoogleSpeechRecogRTC.py
+%PYTHON_BASE%\python RecaiusSpeechRecogRTC\RecaiusSpeechRecogRTC.py
 
 @set PATH=%PATH_ORG%

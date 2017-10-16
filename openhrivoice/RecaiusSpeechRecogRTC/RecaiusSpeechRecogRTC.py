@@ -33,6 +33,7 @@ from openhrivoice import utils
 from openhrivoice.config import config
 
 from openhrivoice.CloudSpeechRecogBase import CloudSpeechRecogBase
+from openhrivoice.RecaiusSpeechRecogRTC.recaius import RecaiusAsr
 
 try:
     import gettext
@@ -47,65 +48,62 @@ __doc__ = _('Google Speech Recognition component.')
 #
 #  
 #
-class GoogleSpeechRecogWrap(CloudSpeechRecogBase):
+class RecaiusSpeechRecogWrap(CloudSpeechRecogBase):
     
     #
     #  Constructor
     #
-    def __init__(self, rtc, language='ja-JP'):
+    def __init__(self, rtc, language='jp'):
         CloudSpeechRecogBase.__init__(self, language)
         self._config = config()
+        self._service_id={}
+        self._password=""
 
-        self._endpoint = 'http://www.google.com/speech-api/v2/recognize'
+        self._recaius = RecaiusAsr()
 
         prop = rtc._properties
-        if prop.getProperty("google.speech.apikey") :
-            self._apikey=prop.getProperty("google.speech.apikey")
+        if prop.getProperty("recaius.speech.jp.id") :
+            self._service_id['jp']=prop.getProperty("recaius.speech.jp.id")
 
-        if prop.getProperty("google.speech.lang") :
-            self._lang=prop.getProperty("google.speech.lang")
+        if prop.getProperty("recaius.speech.us.id") :
+            self._service_id['us']=prop.getProperty("recaius.speech.us.id")
 
-        if prop.getProperty("google.speech.logdir") :
-            self._logdir=prop.getProperty("google.speech.logdir")
+        if prop.getProperty("recaius.speech.cn.id") :
+            self._service_id['cn']=prop.getProperty("recaius.speech.cn.id")
+
+        if prop.getProperty("recaius.speech.kr.id") :
+            self._service_id['kr']=prop.getProperty("recaius.speech.kr.id")
+
+        if prop.getProperty("recaius.speech.passwd") :
+            self._passwd=prop.getProperty("recaius.speech.passwd")
+
+        if prop.getProperty("recaius.speech.lang") :
+            self._lang=prop.getProperty("recaius.speech.lang")
+
+        if prop.getProperty("recaius.speech.logdir") :
+            self._logdir=prop.getProperty("recaius.speech.logdir")
 
         if prop.getProperty("google.speech.save_wav") :
             if prop.getProperty("google.speech.save_wav") == 'YES':
                 self._logger = True
 
+        self._recaius.setAccount(self._service_id[self._lang], self._passwd)
 
-    #
-    #  Set ApiKey
-    #
-    def set_apikey(self, key):
-        self._apikey = key
+        self._token = self._recaius.requestAuthToken()
 
 
     #
-    #  Request Google Voice Recognition
+    #  Request Recaius Voice Recognition
     #
     def request_speech_recog(self, data):
-        query_string = {'output': 'json', 'lang': self._lang, 'key': self._apikey}
-        url = '{0}?{1}'.format(self._endpoint, urllib.urlencode(query_string)) 
-
-        headers = {'Content-Type': 'audio/l16; rate=16000'}
-        voice_data = str(bytearray(data))
-
-        try:
-            request = urllib2.Request(url, data=voice_data, headers=headers)
-            result = urllib2.urlopen(request)
-            response = result.read()
-            return response.decode('utf-8').split()
-        except:
-            print url
-            print traceback.format_exc()
-            return ["Error"]
+       return self._recaius.request_speech_recog(str(bytearray(data)))
 
 
 #
-#  GoogleSpeechRecogRTC 
+#  RecaiusRTC 
 #
-GoogleSpeechRecogRTC_spec = ["implementation_id", "GoogleSpeechRecogRTC",
-                  "type_name",         "GoogleSpeechRecogRTC",
+RecaiusSpeechRecogRTC_spec = ["implementation_id", "RecaiusSpeechRecogRTC",
+                  "type_name",         "RecaiusSpeechRecogRTC",
                   "description",       __doc__.encode('UTF-8'),
                   "version",           __version__,
                   "vendor",            "AIST",
@@ -115,7 +113,7 @@ GoogleSpeechRecogRTC_spec = ["implementation_id", "GoogleSpeechRecogRTC",
                   "language",          "Python",
                   "lang_type",         "script",
 
-		  "conf.default.lang", "ja-JP",
+		  "conf.default.lang", "jp",
 		  "conf.__widget__.lang", "text",
                   "conf.__type__.lang", "string",
 
@@ -152,9 +150,9 @@ class DataListener(OpenRTM_aist.ConnectorDataListenerT):
         self._obj.onData(self._name, data)
 
 #
-#  GoogleSpeechRecogRTC Class
+#  RecauisSpeechRecogRTC Class
 #
-class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
+class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     #  Constructor
     #
@@ -179,7 +177,7 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logger.RTC_INFO("Copyright (C) 2017 Isao Hara")
         #
         #
-	self.bindParameter("lang", self._lang, "ja-JP")
+	self.bindParameter("lang", self._lang, "jp")
 	self.bindParameter("min_silence", self._min_silence, "200")
 	self.bindParameter("silence_thr", self._silence_thr, "-20")
 	self.bindParameter("min_buflen", self._min_buflen, "8000")
@@ -221,14 +219,14 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #  OnActivate
     #
     def onActivated(self, ec_id):
-        self._recog = GoogleSpeechRecogWrap(self, self._lang[0])
+        self._recog = RecaiusSpeechRecogWrap(self, self._lang[0])
         self._recog.setcallback(self.onResult)
 
         OpenRTM_aist.DataFlowComponentBase.onActivated(self, ec_id)
         #self._recog.set_lang(self._lang[0])
         self._recog.set_voice_detect_param(int(self._min_silence[0]),  int(self._silence_thr[0]), int(self._min_buflen[0]))
 
-        if self._recog._apikey:
+        if self._recog._token:
             self._recog.start()
             return RTC.RTC_OK
         else:
@@ -270,19 +268,18 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
             listentext.setAttribute("state","RecognitionFailed")
         else:
             try:
-                data.pop(0)
                 res = ''.join(data)
                 #print res;
                 result=json.loads(res)
                 i=0
-                for r in result['result'][0]['alternative']:
+                for r in result[0]['result']:
                     i += 1
                     rank = str(i)
                     if 'confidence' in r :
                         score=str(r['confidence'])
                     else:
                         score=0.0
-                    text=r['transcript']
+                    text=r['str']
                     hypo = doc.createElement("data")
                     hypo.setAttribute("rank", rank)
                     hypo.setAttribute("score", score)
@@ -304,7 +301,7 @@ class GoogleSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
 #
 #  Manager Class
 #
-class GoogleSpeechRecogManager:
+class RecaiusSpeechRecogManager:
     #
     #  Constructor
     #
@@ -337,15 +334,15 @@ class GoogleSpeechRecogManager:
     #  Initialize rtc
     #
     def moduleInit(self, manager):
-        profile = OpenRTM_aist.Properties(defaults_str = GoogleSpeechRecogRTC_spec)
-        manager.registerFactory(profile, GoogleSpeechRecogRTC, OpenRTM_aist.Delete)
+        profile = OpenRTM_aist.Properties(defaults_str = RecaiusSpeechRecogRTC_spec)
+        manager.registerFactory(profile, RecaiusSpeechRecogRTC, OpenRTM_aist.Delete)
 
-        self._comp = manager.createComponent("GoogleSpeechRecogRTC?exec_cxt.periodic.rate=1")
+        self._comp = manager.createComponent("RecaiusSpeechRecogRTC?exec_cxt.periodic.rate=1")
 
 #
 #  Main
 #
 if __name__=='__main__':
-    manager = GoogleSpeechRecogManager()
+    manager = RecaiusSpeechRecogManager()
     manager.start()
 
