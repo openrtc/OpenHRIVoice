@@ -53,7 +53,7 @@ class RecaiusSpeechRecogWrap(CloudSpeechRecogBase):
     #
     #  Constructor
     #
-    def __init__(self, rtc, language='jp'):
+    def __init__(self, rtc, language='jp', ex_sec=600):
         CloudSpeechRecogBase.__init__(self, language)
         self._config = config()
         self._service_id={}
@@ -89,15 +89,14 @@ class RecaiusSpeechRecogWrap(CloudSpeechRecogBase):
 
         self._recaius.setAccount(self._service_id[self._lang], self._passwd)
 
-        self._token = self._recaius.requestAuthToken()
-
+        self._token = self._recaius.requestAuthToken(ex_sec)
 
     #
     #  Request Recaius Voice Recognition
     #
     def request_speech_recog(self, data):
        return self._recaius.request_speech_recog(str(bytearray(data)))
-
+       
 
 #
 #  RecaiusRTC 
@@ -227,6 +226,7 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
         self._recog.set_voice_detect_param(int(self._min_silence[0]),  int(self._silence_thr[0]), int(self._min_buflen[0]))
 
         if self._recog._token:
+            #self._recog._recaius.startVoiceRecogSession()
             self._recog.start()
             return RTC.RTC_OK
         else:
@@ -237,6 +237,7 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def onDeactivate(self, ec_id):
         self._recog.terminate()
+        #self._recog._recaius.endVoiceRecogSession()
         OpenRTM_aist.DataFlowComponentBase.onDeactivate(self, ec_id)
         return RTC.RTC_OK
 
@@ -268,11 +269,8 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
             listentext.setAttribute("state","RecognitionFailed")
         else:
             try:
-                res = ''.join(data)
-                #print res;
-                result=json.loads(res)
                 i=0
-                for r in result[0]['result']:
+                for r in data['result']:
                     i += 1
                     rank = str(i)
                     if 'confidence' in r :

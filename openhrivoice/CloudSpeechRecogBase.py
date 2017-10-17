@@ -51,6 +51,7 @@ class CloudSpeechRecogBase(threading.Thread):
 
         self._running = True
         self._lock = threading.RLock()
+        self._prebuf=[]
 
     #
     #   Write to audio data
@@ -63,8 +64,11 @@ class CloudSpeechRecogBase(threading.Thread):
                 chunks=detect_nonsilent(audio, min_silence_len=self._min_silence, silence_thresh=self._silence_thr)
 
                 if chunks :
+                    if not self._audio :
+                        self._audio.extend(self._prebuf)
                     self._audio.extend(self._buffer)
                 else:
+                    self._prebuf = self._buffer
                     if self._audio :
                         self._audio.extend(self._buffer)
                         self._lock.acquire()
@@ -153,7 +157,8 @@ class CloudSpeechRecogBase(threading.Thread):
                     for c in self._callbacks:
                         c(res)
                 else:
-                    print "----"
+                    #print "----"
+                    pass
 
         print 'CloudSpeech: exit from event loop'
 

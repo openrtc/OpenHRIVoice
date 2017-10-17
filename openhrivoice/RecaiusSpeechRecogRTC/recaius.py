@@ -22,6 +22,8 @@ class RecaiusAsr():
      self._uuid = ''
      self._vid=1
      self._silence = getWavData("silence.wav")
+     self._expiry=0
+     self._boundary = "----Boundary"
 
      opener = urllib2.build_opener(urllib2.HTTPSHandler(debuglevel=0),
                              urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
@@ -33,10 +35,10 @@ class RecaiusAsr():
 
 
   #-------- Recaius Authorization
-  def requestAuthToken(self):
+  def requestAuthToken(self, ex_sec=600):
      url = self._baseAuthUrl+'tokens'
      headers = {'Content-Type' : 'application/json' }
-     data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd} }
+     data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd}, "expiry_sec" : ex_sec }
 
      request = urllib2.Request(url, data=json.dumps(data), headers=headers)
      try:
@@ -50,15 +52,17 @@ class RecaiusAsr():
      else:
        response = result.read()
        res = response.decode('utf-8')
+       self._expiry = time.time() + ex_sec
+       print res
        data=json.loads(res)
        self._token=data['token']
        return self._token
 
-  def refreshAuthToken(self):
+  def refreshAuthToken(self, ex_sec=600):
      url = self._baseAuthUrl+'tokens'
      headers = {'Content-Type' : 'application/json', 'X-Token' : self._token }
 
-     data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd} }
+     data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd}, "expiry_sec" : ex_sec }
 
      request = urllib2.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'PUT'
@@ -73,7 +77,9 @@ class RecaiusAsr():
      else:
        response = result.read()
        res = response.decode('utf-8')
+       self._expiry = time.time() + ex_sec
        #print res
+       return self._expiry
 
     
   def checkAuthToken(self):
@@ -97,14 +103,14 @@ class RecaiusAsr():
        return data['remaining_sec']
 
   #-------- Voice Recognition
-  def startVoiceRecogSession(self):
+  def startVoiceRecogSession(self, model=1):
      url = self._baseAsrUrl+'voices'
      headers = {'Content-Type' : 'application/json', 'X-Token' : self._token }
 
      data = { "audio_type": "audio/x-linear",
               "result_type": "nbest",
-              "push_to_talk": True,
-              "model_id": 1,
+              #"push_to_talk": True,
+              "model_id": model,
               "comment": "Start" }
 
      request = urllib2.Request(url, data=json.dumps(data), headers=headers)
@@ -122,6 +128,7 @@ class RecaiusAsr():
        res = response.decode('utf-8')
        data=json.loads(res)
        self._uuid = data['uuid']
+       self._boundary = "----Boundary"+base64.b64encode(self._uuid)
        return True
 
   def endVoiceRecogSession(self):
@@ -146,7 +153,7 @@ class RecaiusAsr():
        return True
 
   def getVoiceRecogResult(self, data):
-      data = self._silence+data
+      #data = self._silence+data
       data += self._silence+self._silence
       voice_data = divString(data, 16364)
       #voice_data = divString(data, 32728)
@@ -154,30 +161,29 @@ class RecaiusAsr():
 
       for d in voice_data:
         self._vid += 1
-        res = self.sendVoiceRecogResult(self._vid, d)
+        res = self.sendSpeechData(self._vid, d)
         if res :
           data=json.loads(res)
-
-          if data[0]['type'] == 'RESULT' :
-             #return data[0]
-             return res
+          for d in data:
+            if d['type'] == 'RESULT' :
+              return d
+          print res
       return self.flushVoiceRecogResult()
 
-  def sendVoiceRecogResult(self, vid, data):
+  def sendSpeechData(self, vid, data):
      url = self._baseAsrUrl+'voices/'+self._uuid
      headers = {'Content-Type' : 'multipart/form-data','X-Token' : self._token }
-     boundary = "----Boundary"+base64.b64encode(self._uuid)
 
      form_data = ""
-     form_data += boundary+"\r\n"
+     form_data += self._boundary+"\r\n"
      form_data += "Content-Disposition: form-data;name=\"voice_id\"\r\n\r\n"
      form_data += str(vid)+"\r\n"
-     form_data += boundary+"\r\n"
+     form_data += self._boundary+"\r\n"
      form_data += "Content-Disposition: form-data;name=\"voice\"\r\n"
      form_data += "Content-Type: application/octet-stream\r\n\r\n"
      form_data += data
      form_data += "\r\n"
-     form_data += boundary+"\r\n"
+     form_data += self._boundary+"\r\n"
 
      request = urllib2.Request(url)
      request.add_header( 'X-Token', self._token )
