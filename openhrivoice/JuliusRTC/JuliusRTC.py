@@ -119,13 +119,54 @@ class JuliusWrap(threading.Thread):
             if os.path.isfile(rtc._jconf_file[0]) :
                 self._jconf_file = rtc._jconf_file[0]
 
+
+        ###########################################################
+
+        self.setupSubprocess()
+
+        print "command line: %s" % " ".join(self._cmdline)
+        print self._cmdline
+
+        self._running = True
+        self._p = subprocess.Popen(self._cmdline)
+
+        #####################################################
+
+
+        #
+        #   Connect to Julius (try ten times)
+        time.sleep(1)
+        print "connecting to ports"
+        for retry in range(0, 10):
+            try:
+                self._modulesocket.connect((self._modulehost, self._moduleport))
+            except socket.error:
+                time.sleep(1)
+                continue
+            break
+        for retry in range(0, 10):
+            try:
+                self._audiosocket.connect(( self._audiohost, self._audioport))
+            except socket.error:
+                time.sleep(1)
+                continue
+            break
+
+        #
+        # for grammar mode
+        if self._mode != 'dictation' :
+            self._modulesocket.sendall("INPUTONCHANGE TERMINATE\n")
+
+        print "JuliusWrap started"
+
+    #
+    # Parameter seting for Julius
+    #
+    def setupSubprocess(self):
+
         self._cmdline = []
         self._cmdline.append(self._config._julius_bin)
 
-        ###########################################################
-        #  Parameter set for Julius
-        #
-        ###########################################################
         if self._mode == 'dictation' :
             # dictation-kit-v4.4(GMM版デフォルトパラメータ）ただし、outputを5に変更
             self._cmdline.extend(['-d',     self._config._julius_bingram_ja])
@@ -160,6 +201,9 @@ class JuliusWrap(threading.Thread):
                 self._cmdline.extend(["-v", os.path.join(self._config._basedir, "JuliusRTC", "dummy-en.dict")])
                 self._cmdline.extend(["-sb", "160.0"])
     
+            #
+            #  large model or small model
+            #
             if self._memsize == "large":
                 self._cmdline.extend(["-b", "-1", "-b2", "120", "-s", "1000" ,"-m", "2000"])
             else:
@@ -178,7 +222,6 @@ class JuliusWrap(threading.Thread):
         self._cmdline.extend(["-record", self._logdir]) # 認識した音声データを連続したファイルに自動保存
         self._cmdline.extend(["-smpFreq", "16000"])     # サンプリング周波数(Hz)
 
-
         self._audioport = self.getunusedport()
         self._cmdline.extend(["-input", "adinnet",  "-adport",  str(self._audioport)]) # 入力の設定（adinport使用)
 
@@ -188,40 +231,6 @@ class JuliusWrap(threading.Thread):
         self._moduleport = self.getunusedport()
         self._cmdline.extend(["-module", str(self._moduleport)])                       # module mode
 
-        #####################################################
-
-        print "command line: %s" % " ".join(self._cmdline)
-        print self._cmdline
-
-        self._running = True
-        self._p = subprocess.Popen(self._cmdline)
-
-
-        #
-        #   Connect to Julius
-        time.sleep(1)
-        print "connecting to ports"
-        for retry in range(0, 10):
-            try:
-                self._modulesocket.connect((self._modulehost, self._moduleport))
-            except socket.error:
-                time.sleep(1)
-                continue
-            break
-        for retry in range(0, 10):
-            try:
-                self._audiosocket.connect(( self._audiohost, self._audioport))
-            except socket.error:
-                time.sleep(1)
-                continue
-            break
-
-        #
-        # for grammar mode
-        if self._mode != 'dictation' :
-            self._modulesocket.sendall("INPUTONCHANGE TERMINATE\n")
-
-        print "JuliusWrap started"
 
     #
     #  Connect to Julius
