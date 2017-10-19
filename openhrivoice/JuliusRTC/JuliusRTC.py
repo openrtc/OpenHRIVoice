@@ -97,6 +97,7 @@ class JuliusWrap(threading.Thread):
         self._mode = 'grammar'
         #self._jcode = 'euc_jp'
         self._jcode = 'utf-8'
+        self._p = None
 
         self._modulesocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._audiosocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,15 +122,14 @@ class JuliusWrap(threading.Thread):
 
 
         ###########################################################
+        if self._mode != "client" :
+            self.setupSubprocess()
 
-        self.setupSubprocess()
-
-        print "command line: %s" % " ".join(self._cmdline)
-        print self._cmdline
+            print "command line: %s" % " ".join(self._cmdline)
+            print self._cmdline
+            self._p = subprocess.Popen(self._cmdline)
 
         self._running = True
-        self._p = subprocess.Popen(self._cmdline)
-
         #####################################################
 
 
@@ -159,6 +159,14 @@ class JuliusWrap(threading.Thread):
 
         print "JuliusWrap started"
 
+    #
+    # Parameter seting for Julius
+    #
+    def setupJuliusServer(self, host, mport, aport):
+        self._modulehost = host
+        self._moduleport = mport
+        self._audiohost  = host
+        self._audioport  = sport
     #
     # Parameter seting for Julius
     #
@@ -249,8 +257,13 @@ class JuliusWrap(threading.Thread):
     #  close Julius
     def close_julius(self):
         if self._modulesocket :
-            self._modulesocket.shutdown()
-            self._modulesocket.close()
+            try:
+                self._modulesocket.sendall("DIE\n")
+                time.sleep(1)
+                self._modulesocket.shutdown(socket.RDWR)
+                self._modulesocket.close()
+            except:
+                pass
             self._modulesocket = None
 
     #
@@ -270,8 +283,11 @@ class JuliusWrap(threading.Thread):
     #  close Adinnet
     def close_adinnet(self):
         if self._audiosocket :
-            self._audiosocket.shutdown()
-            self._audiosocket.close()
+            try:
+                self._audiosocket.shutdown(socket.RDWR)
+                self._audiosocket.close()
+            except:
+                pass
             self._audiosocket = None
 
 
@@ -293,8 +309,8 @@ class JuliusWrap(threading.Thread):
         self._running = False
         self.close_adinnet()
         self.close_julius()
-
-        self._p.terminate()
+        if self._p :
+            self._p.terminate()
         return 0
 
     #

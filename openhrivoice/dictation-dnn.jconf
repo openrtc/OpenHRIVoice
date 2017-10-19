@@ -6,6 +6,6 @@
 -lmp  14 0
 -lmp2 14 0
 
--input mic
+#-input mic
 -dnnconf 3rdparty\dictation-kit-v4.4\julius.dnnconf
 
