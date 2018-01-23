@@ -419,6 +419,10 @@ class OpenJTalkRTCManager:
         manager.registerFactory(profile, OpenJTalkRTC, OpenRTM_aist.Delete)
         self._comp = manager.createComponent("OpenJTalkRTC")
 
+def main():
+    manager = OpenJTalkRTCManager()
+    manager.start()
+
 #
 #  Main Function
 #

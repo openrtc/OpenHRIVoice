@@ -333,6 +333,10 @@ class JuliusCliManager:
 
         self._comp = manager.createComponent("JuliusCliRTC?exec_cxt.periodic.rate=1")
 
+def main():
+    manager = JuliusCliManager()
+    manager.start()
+
 #
 #  Main
 #

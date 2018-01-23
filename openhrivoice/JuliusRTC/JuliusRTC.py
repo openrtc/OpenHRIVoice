@@ -775,6 +775,10 @@ class JuliusRTCManager:
             else:
                 self._comp[a].setgrammarfile(a, self._rebuid_lexicon)
 
+def main():
+    manager = JuliusRTCManager()
+    manager.start()
+
 #
 #  Main
 #

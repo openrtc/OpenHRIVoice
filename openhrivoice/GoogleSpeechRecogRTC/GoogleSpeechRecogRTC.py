@@ -342,6 +342,11 @@ class GoogleSpeechRecogManager:
 
         self._comp = manager.createComponent("GoogleSpeechRecogRTC?exec_cxt.periodic.rate=1")
 
+def main():
+    manager = GoogleSpeechRecogManager()
+    manager.start()
+
+
 #
 #  Main
 #

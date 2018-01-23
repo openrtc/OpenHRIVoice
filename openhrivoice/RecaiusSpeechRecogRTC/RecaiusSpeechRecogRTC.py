@@ -337,6 +337,11 @@ class RecaiusSpeechRecogManager:
 
         self._comp = manager.createComponent("RecaiusSpeechRecogRTC?exec_cxt.periodic.rate=1")
 
+def main():
+    manager = RecaiusSpeechRecogManager()
+    manager.start()
+
+
 #
 #  Main
 #

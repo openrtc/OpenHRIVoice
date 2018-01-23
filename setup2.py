@@ -28,8 +28,11 @@ if sys.platform == "win32":
         "console": [
                     "openhrivoice/OpenJTalkRTC/OpenJTalkRTC.py",
                     "openhrivoice/JuliusRTC/JuliusRTC.py",
+                    "openhrivoice/JuliusCliRTC/JuliusCli.py",
                     "openhrivoice/FestivalRTC/FestivalRTC.py",
                     "openhrivoice/GoogleSpeechRecogRTC/GoogleSpeechRecogRTC.py",
+                    "openhrivoice/RecaiusSpeechRecogRTC/RecaiusSpeechRecogRTC.py",
+                    "openhrivoice/RecaiusTalkRTC/RecaiusTalkRTC.py",
                     "openhrivoice/XSLTRTC/XSLTRTC.py",
                     "openhrivoice/MARYRTC/MARYRTC.py",
                     ],
@@ -60,11 +63,23 @@ setup(name='openhrivoice',
       long_description="""Voice components for OpenRTM (part of OpenHRI softwares).""",
       classifiers=[],
       keywords='',
-      author='Yosuke Matsusaka',
-      author_email='yosuke.matsusaka@aist.go.jp',
-      url='http://openrtc.org/',
+      author='Yosuke Matsusaka and Isao Hara',
+      author_email='isao-hara@aist.go.jp',
+      url='http://www.intsys.org/_openrtc/ja/HRI/index.html',
       license='EPL',
-      data_files = [],
+      data_files = [('/usr/share/openhrivoice2.30',
+                    ['util/setup_3rdparty_1204.sh',
+                     'util/setup_3rdparty_1404.sh',
+		     'util/dictation_kit.sh','util/func_setup.sh',
+		     'util/mmdagent_example.sh',
+		     'util/uninstall_3rdparty.sh',
+		     'util/hts_voice.sh',
+		     'util/open_jtalk_dic_utf_8.sh']),
+		    ('/usr/share/openhrivoice2.30/lice_dir',
+		    ['util/lice_dir/hts_voice_copyright.txt',
+		     'util/lice_dir/mmdagent_mei_copyright.txt',
+		     'util/lice_dir/julius_copyright_utf8.txt',
+		     'util/lice_dir/utf_8_copyright.txt'])],
       packages=find_packages(exclude=['ez_setup', 'doc', 'examples', 'tests']),
       include_package_data=True,
       package_data={'openhrivoice': ['*.dfa', '*.dict', '*.xsd']},
@@ -76,10 +91,13 @@ setup(name='openhrivoice',
       [console_scripts]
       openjtalkrtc = openhrivoice.OpenJTalkRTC.OpenJTalkRTC:main
       juliusrtc = openhrivoice.JuliusRTC.JuliusRTC:main
+      juliusclirtc = openhrivoice.JuliusCliRTC.JuliusCli:main
       festivalrtc = openhrivoice.FestivalRTC.FestivalRTC:main
-      googlespeechrecogrtc = openhrivoice.GoogleSpeechRecogRTC:main
-      xlstrtc = openhrivoice.XSLTRTC:main
-      maryrtc = openhrivoice.MARYRTC:main
+      googlespeechrecogrtc = openhrivoice.GoogleSpeechRecogRTC.GoogleSpeechRecogRTC:main
+      recaiusspeechrecogrtc = openhrivoice.RecaiusSpeechRecogRTC.RecaiusSpeechRecogRTC:main
+      recaiustalkrtc = openhrivoice.RecaiusTalkRTC.RecaiusTalkRTC:main
+      xlstrtc = openhrivoice.XSLTRTC.XSLTRTC:main
+      maryrtc = openhrivoice.MARYRTC.MARYRTC:main
       """,
       **extra
       )
