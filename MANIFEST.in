@@ -1,3 +1,4 @@
 recursive-include examples *
 recursive-include openhrivoice *
+recursive-include util *
 global-exclude *~ .gitignore *.pyc
