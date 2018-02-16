@@ -5,4 +5,3 @@ dist
 openhrivoice.egg-info
 
 *.pyc
-*.wav

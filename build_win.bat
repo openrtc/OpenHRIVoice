@@ -9,7 +9,7 @@
 
 @echo on
 
-%PYTHON_BASE%\python.exe setup2.py py2exe
+%PYTHON_BASE%\python.exe setup_win.py py2exe
 
 copy openhrivoice\*.conf dist 
 %RoboCopy% /S openhrivoice\doc dist\doc
