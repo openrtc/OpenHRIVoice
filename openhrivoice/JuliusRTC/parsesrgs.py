@@ -15,7 +15,9 @@ http://www.opensource.org/licenses/eclipse-1.0.txt
 
 import sys, os, re, codecs, types
 from lxml import etree
-from StringIO import StringIO
+
+from io import StringIO
+
 from openhrivoice.__init__ import __version__
 from openhrivoice.config import config
 from openhrivoice.JuliusRTC.lexicondb import *
@@ -83,12 +85,12 @@ class PLS:
                         ipa = elem.text
                     elif elem.tag.find("sampa") >= 0:
                         sampa = elem.text
-        except etree.XMLSyntaxError, e:
-            print "[error] invalid xml syntax"
-            print e
-        except IOError, e:
-            print "[error] IO error: unable to open file ", file
-            print e
+        except etree.XMLSyntaxError as e:
+            print ("[error] invalid xml syntax")
+            print (e)
+        except IOError as e:
+            print ("[error] IO error: unable to open file ", file)
+            print (e)
         return self
 
 #
@@ -181,12 +183,12 @@ class SRGS:
             doc.xinclude()
             self._node = doc.getroot()
 
-        except etree.XMLSyntaxError, e:
-            print "[error] invalid xml syntax"
-            print e
-        except IOError, e:
-            print "[error] IO error: unable to open file ", file
-            print e
+        except etree.XMLSyntaxError as e:
+            print ("[error] invalid xml syntax")
+            print (e)
+        except IOError as e:
+            print ("[error] IO error: unable to open file ", file)
+            print (e)
         self.parse(self._node)
 
     #

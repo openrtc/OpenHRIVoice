@@ -19,29 +19,21 @@ import time
 import urllib
 import tempfile
 import traceback
-import codecs
-import locale
 import wave
 import optparse
 import OpenRTM_aist
 import RTC
-from openhrivoice.__init__ import __version__
-from openhrivoice import utils
-from openhrivoice.config import config
-from openhrivoice.VoiceSynthComponentBase import *
-try:
-    import gettext
-    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
-except:
-    _ = lambda s: s
+from __init__ import __version__
+import utils
+
+from VoiceSynthComponentBase import *
+
 
 __doc__ = _('German speech synthesis component using MARY.')
 
 class MARYTalkWrap(VoiceSynthBase):
     def __init__(self, rtc):
         VoiceSynthBase.__init__(self)
-        self._conf = config()
-
         prop = rtc._properties
         if prop.getProperty("mary.sox_dir") :
             self._conf.sox_top(prop.getProperty("mary.sox_dir"))
@@ -52,15 +44,15 @@ class MARYTalkWrap(VoiceSynthBase):
     def set_url(self, url):
         self._baseurl = "http://"+url+"/"
         self._voice_type = {}
-        print self._baseurl
+        print (self._baseurl)
         voiceinfo = urllib.urlopen(self._baseurl + 'voices').readlines()
-        print voiceinfo
+        print (voiceinfo)
         for v in voiceinfo:
             (id, lang, gender, type) = v.strip().split(' ', 3)
             if lang == self._lang:
                 self._voice_type[gender] = id
 
-        print self._voice_type
+        print (self._voice_type)
 
     def getaudio(self, data, character):
         query = [
@@ -173,8 +165,8 @@ class MARYRTCManager:
         utils.addmanageropts(parser)
         try:
             opts, args = parser.parse_args()
-        except optparse.OptionError, e:
-            print >>sys.stderr, 'OptionError:', e
+        except optparse.OptionError as e:
+            print ('OptionError:', e, file=sys.stderr)
             sys.exit(1)
         self._comp = None
         self._manager = OpenRTM_aist.Manager.init(utils.genmanagerargs(opts))
@@ -189,13 +181,8 @@ class MARYRTCManager:
         manager.registerFactory(profile, MARYRTC, OpenRTM_aist.Delete)
         self._comp = manager.createComponent("MARYRTC")
 
+
 def main():
-    locale.setlocale(locale.LC_CTYPE, "")
-    encoding = locale.getlocale()[1]
-    if not encoding:
-        encoding = "us-ascii"
-    sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
-    sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
     manager = MARYRTCManager()
     manager.start()
 

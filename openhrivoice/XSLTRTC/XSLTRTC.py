@@ -21,22 +21,18 @@ import codecs
 import locale
 import optparse
 from lxml import etree
-from StringIO import StringIO
+from io import StringIO
 import OpenRTM_aist
 import RTC
-from openhrivoice.__init__ import __version__
-from openhrivoice import utils
-try:
-    import gettext
-    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
-except:
-    _ = lambda s: s
+from __init__ import __version__
+import utils
 
-__doc__ = _('XML transformation component.')
+
+__doc__ = 'XML transformation component.'
 
 XSLTRTC_spec = ["implementation_id", "XSLTRTC",
                 "type_name",         "XSLTRTC",
-                "description",       __doc__.encode('UTF-8'),
+                "description",       __doc__,
                 "version",           __version__,
                 "vendor",            "AIST",
                 "category",          "communication",
@@ -69,7 +65,7 @@ class XSLTRTC(OpenRTM_aist.DataFlowComponentBase):
         # create inport
         self._indata = RTC.TimedString(RTC.Time(0,0), "")
         self._inport = OpenRTM_aist.InPort("text", self._indata)
-        self._inport.appendProperty('description', _('Text data in XML format.').encode('UTF-8'))
+        self._inport.appendProperty('description', 'Text data in XML format.')
         self._inport.addConnectorDataListener(OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
                                               DataListener("ON_BUFFER_WRITE", self))
         self.registerInPort(self._inport._name, self._inport)
@@ -77,7 +73,7 @@ class XSLTRTC(OpenRTM_aist.DataFlowComponentBase):
         # create outport for audio stream
         self._outdata = RTC.TimedString(RTC.Time(0,0), "")
         self._outport = OpenRTM_aist.OutPort("result", self._outdata)
-        self._outport.appendProperty('description', _('Text data in XML format (transformed).').encode('UTF-8'))
+        self._outport.appendProperty('description', 'Text data in XML format (transformed).')
         self.registerOutPort(self._outport._name, self._outport)
         return RTC.RTC_OK
     
@@ -97,20 +93,16 @@ class XSLTRTC(OpenRTM_aist.DataFlowComponentBase):
 
 class XSLTRTCManager:
     def __init__(self):
-        encoding = locale.getpreferredencoding()
-        sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
-        sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
-
         parser = utils.MyParser(version=__version__, usage="%prog [xsltfile]",
                                 description=__doc__)
         utils.addmanageropts(parser)
         parser.add_option('-g', '--gui', dest='guimode', action="store_true",
                           default=False,
-                          help=_('show file open dialog in GUI'))
+                          help='show file open dialog in GUI')
         try:
             opts, args = parser.parse_args()
-        except optparse.OptionError, e:
-            print >>sys.stderr, 'OptionError:', e
+        except optparse.OptionError as e:
+            print ('OptionError:', e, file=sys.stderr)
             sys.exit(1)
 
         if opts.guimode == True:

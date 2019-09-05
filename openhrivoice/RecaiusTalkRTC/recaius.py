@@ -6,7 +6,7 @@ import time,wave
 import math
 import json
 import urllib
-import urllib2
+import urllib.request, urllib.error
 import cookielib
 
 import base64
@@ -20,9 +20,9 @@ class RecaiusAuth():
      self._passwd=passwd
      self._token = ''
 
-     opener = urllib2.build_opener(urllib2.HTTPSHandler(debuglevel=0),
-                             urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-     urllib2.install_opener(opener)
+     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(debuglevel=0),
+                             urllib.request.HTTPCookieProcessor(cookielib.CookieJar()))
+     urllib.request.install_opener(opener)
 
   #-------- Recaius Authorization
   def requestAuthToken(self, srv):
@@ -30,14 +30,14 @@ class RecaiusAuth():
      headers = {'Content-Type' : 'application/json' }
      data = { srv : { "service_id" : self._service_id, "password" : self._passwd} }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -52,15 +52,15 @@ class RecaiusAuth():
      headers = {'Content-Type' : 'application/json', 'X-Token' : self._token }
      data = { srv : { "service_id" : self._service_id, "password" : self._passwd} }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'PUT'
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
        return -1
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print( 'URLErroe reason:', e.reason)
        return -1
      else:
        response = result.read()
@@ -74,14 +74,14 @@ class RecaiusAuth():
      url = '{0}?{1}'.format(self._baseAuthUrl+'tokens', urllib.urlencode(query_string))
      headers = {'Content-Type' : 'application/json', 'X-Token' : self._token }
 
-     request = urllib2.Request(url, headers=headers)
+     request = urllib.request.Request(url, headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
        return -1
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return -1
      else:
        response = result.read()
@@ -104,9 +104,9 @@ class RecaiusAsr():
      self._silence = getWavData("silence.wav")
      self._boundary = "----Boundary"
 
-     opener = urllib2.build_opener(urllib2.HTTPSHandler(debuglevel=0),
-                             urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-     urllib2.install_opener(opener)
+     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(debuglevel=0),
+                             urllib.request.HTTPCookieProcessor(cookielib.CookieJar()))
+     urllib.request.install_opener(opener)
 
   #-------- Recaius Authorization
   def requestAuthToken(self):
@@ -133,15 +133,15 @@ class RecaiusAsr():
               "model_id": 1,
               "comment": "Start" }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -155,21 +155,21 @@ class RecaiusAsr():
      url = self._baseAsrUrl+'voices/'+self._uuid
      headers = {'X-Token' : self._token }
 
-     request = urllib2.Request(url, headers=headers)
+     request = urllib.request.Request(url, headers=headers)
      request.get_method = lambda : 'DELETE'
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.cod(e))
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
        res = response.decode('utf-8')
-       if res : print res
+       if res : print (res)
        return True
 
   def getVoiceRecogResult(self, data):
@@ -203,7 +203,7 @@ class RecaiusAsr():
      form_data += "\r\n"
      form_data += self._boundary+"\r\n"
 
-     request = urllib2.Request(url)
+     request = urllib.request.Request(url)
      request.add_header( 'X-Token', self._token )
      request.add_header( 'Content-Type', 'multipart/form-data')
      request.add_data(bytearray(form_data))
@@ -211,13 +211,13 @@ class RecaiusAsr():
      request.get_method = lambda : 'PUT'
 
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print( 'Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -232,17 +232,17 @@ class RecaiusAsr():
 
      data = { "voice_id": self._vid }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'PUT'
 
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -275,9 +275,9 @@ class RecaiusTts():
                                     'zh_CN':'zh_CN-en_US-F0002-H00T', 'fr_FR' : 'fr_FR-F0001-H00T'}
                            }
 
-     opener = urllib2.build_opener(urllib2.HTTPSHandler(debuglevel=0),
-                             urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-     urllib2.install_opener(opener)
+     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(debuglevel=0),
+                             urllib.request.HTTPCookieProcessor(cookielib.CookieJar()))
+     urllib.request.install_opener(opener)
 
      self.requestAuthToken()
 
@@ -323,17 +323,17 @@ class RecaiusTts():
               "kbitrate" : 256        # 352, 256, 128, 64, 32, 15
           }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'POST'
 
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return ""
-     except urllib2.URLError as e:
-       print 'URLError reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLError reason:', e.reason)
        return ""
      else:
        response = result.read()
@@ -344,7 +344,7 @@ class RecaiusTts():
  
   def getaudio(self, text, fname, speaker_id):
     data = self.text2speech(text, speaker_id)
-    print fname
+    print (fname)
     if data :
        saveWavData(fname, data)
     return
@@ -370,7 +370,7 @@ def saveWavData(fname, data):
         f.close()
         return True
     except:
-        print "Write Error"
+        print ("Write Error")
         return False
 
 #
@@ -393,12 +393,12 @@ def show_result(result):
     i=1
     for d in data[0]['result'] :
       if 'confidence' in d:
-          print "#"+str(i)+":"+d['str']+" ("+str(d['confidence'])+")"
+          print( "#"+str(i)+":"+d['str']+" ("+str(d['confidence'])+")")
       else:
-          print "#"+str(i)+":"+d['str']
+          print ("#"+str(i)+":"+d['str'])
       i+=1
   except:
-    print result
+    print (result)
 
 
 #
@@ -411,7 +411,7 @@ def main(id, passwd):
   files.sort()
 
   for f in files:
-    print f
+    print (f)
     data = getWavData(f)
 
     result = recaius.request_speech_recog(data)
@@ -419,20 +419,20 @@ def main(id, passwd):
       show_result(result)
 
     else:
-      print "No Result"
-    print ""
+      print( "No Result")
+    print ("")
 
 
 def main_asr(id, passwd, f):
   recaius = RecaiusAsr(id, passwd)
-  print f
+  print (f)
   data = getWavData(f)
 
   result = recaius.request_speech_recog(data)
   if result :
     show_result(result)
   else:
-    print "No Result"
+    print ("No Result")
 
 def main_tts(id, passwd, txt, outfname):
   recaius = RecaiusTts(id, passwd)
@@ -441,7 +441,7 @@ def main_tts(id, passwd, txt, outfname):
   if result :
     saveWavData(outfname, result)
   else:
-    print "No Result"
+    print ("No Result")
 
 
 

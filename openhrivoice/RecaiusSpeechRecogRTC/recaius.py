@@ -6,7 +6,7 @@ import time,wave
 import math
 import json
 import urllib
-import urllib2
+import urllib.request, urllib.error
 import cookielib
 
 import base64
@@ -25,9 +25,9 @@ class RecaiusAsr():
      self._expiry=0
      self._boundary = "----Boundary"
 
-     opener = urllib2.build_opener(urllib2.HTTPSHandler(debuglevel=0),
-                             urllib2.HTTPCookieProcessor(cookielib.CookieJar()))
-     urllib2.install_opener(opener)
+     opener = urllib.request.build_opener(urllib.request.HTTPSHandler(debuglevel=0),
+                             urllib.request.HTTPCookieProcessor(cookielib.CookieJar()))
+     urllib.request.install_opener(opener)
 
   def setAccount(self, service_id, passwd):
      self._service_id=service_id
@@ -40,20 +40,20 @@ class RecaiusAsr():
      headers = {'Content-Type' : 'application/json' }
      data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd}, "expiry_sec" : ex_sec }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
        return None
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return None
      else:
        response = result.read()
        res = response.decode('utf-8')
        self._expiry = time.time() + ex_sec
-       print res
+       print (res)
        data=json.loads(res)
        self._token=data['token']
        return self._token
@@ -64,21 +64,21 @@ class RecaiusAsr():
 
      data = { "speech_recog_jaJP": { "service_id" : self._service_id, "password" : self._passwd}, "expiry_sec" : ex_sec }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'PUT'
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print( 'Error code:', e.code)
        return -1
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return -1
      else:
        response = result.read()
        res = response.decode('utf-8')
        self._expiry = time.time() + ex_sec
-       #print res
+       #print (res)
        return self._expiry
 
     
@@ -87,14 +87,14 @@ class RecaiusAsr():
      url = '{0}?{1}'.format(self._baseAuthUrl+'tokens', urllib.urlencode(query_string))
      headers = {'Content-Type' : 'application/json', 'X-Token' : self._token }
 
-     request = urllib2.Request(url, headers=headers)
+     request = urllib.request.Request(url, headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
        return -1
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return -1
      else:
        response = result.read()
@@ -113,15 +113,15 @@ class RecaiusAsr():
               "model_id": model,
               "comment": "Start" }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -135,21 +135,21 @@ class RecaiusAsr():
      url = self._baseAsrUrl+'voices/'+self._uuid
      headers = {'X-Token' : self._token }
 
-     request = urllib2.Request(url, headers=headers)
+     request = urllib.request.Request(url, headers=headers)
      request.get_method = lambda : 'DELETE'
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print( 'URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
        res = response.decode('utf-8')
-       if res : print res
+       if res : print (res)
        return True
 
   def getVoiceRecogResult(self, data):
@@ -167,7 +167,7 @@ class RecaiusAsr():
           for d in data:
             if d['type'] == 'RESULT' :
               return d
-          print res
+          print (res)
       return self.flushVoiceRecogResult()
 
   def sendSpeechData(self, vid, data):
@@ -185,7 +185,7 @@ class RecaiusAsr():
      form_data += "\r\n"
      form_data += self._boundary+"\r\n"
 
-     request = urllib2.Request(url)
+     request = urllib.request.Request(url)
      request.add_header( 'X-Token', self._token )
      request.add_header( 'Content-Type', 'multipart/form-data')
      request.add_data(bytearray(form_data))
@@ -193,13 +193,13 @@ class RecaiusAsr():
      request.get_method = lambda : 'PUT'
 
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print ('Error code:', e.code)
+       print ('Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print ('URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -214,17 +214,17 @@ class RecaiusAsr():
 
      data = { "voice_id": self._vid }
 
-     request = urllib2.Request(url, data=json.dumps(data), headers=headers)
+     request = urllib.request.Request(url, data=json.dumps(data), headers=headers)
      request.get_method = lambda : 'PUT'
 
      try:
-       result = urllib2.urlopen(request)
-     except urllib2.HTTPError as e:
-       print 'Error code:', e.code
-       print 'Reason:', e.reason
+       result = urllib.urlopen(request)
+     except urllib.error.HTTPError as e:
+       print( 'Error code:', e.code)
+       print( 'Reason:', e.reason)
        return False
-     except urllib2.URLError as e:
-       print 'URLErroe reason:', e.reason
+     except urllib.error.URLError as e:
+       print( 'URLErroe reason:', e.reason)
        return False
      else:
        response = result.read()
@@ -269,7 +269,7 @@ if __name__ == '__main__':
   files.sort()
 
   for f in files:
-    print f
+    print (f)
     data = getWavData(f)
 
     result = recaius.request_speech_recog(data)
@@ -282,12 +282,12 @@ if __name__ == '__main__':
             score=str(d['confidence'])
           else:
             score="0.0"
-          print "#"+str(i)+":"+d['str']+"  ("+score+")"
+          print ("#"+str(i)+":"+d['str']+"  ("+score+")")
           #print d
           i+=1
       except:
-        print result
+        print( result)
     else:
-      print "No Result"
-    print ""
+      print ("No Result")
+    print( "")
 

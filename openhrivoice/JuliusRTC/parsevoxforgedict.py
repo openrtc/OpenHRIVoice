@@ -56,5 +56,5 @@ class VoxforgeDict:
 if __name__ == '__main__':
   #  doc = VoxforgeDict('/usr/share/doc/julius-voxforge/dict.gz')
     doc = VoxforgeDict('D:\local\Julius\Julius_AcousticModels_16kHz-16bit_MFCC_O_D_(0_1_1-build726)\dict')
-    print doc.lookup('hello')
+    print (doc.lookup('hello'))
     

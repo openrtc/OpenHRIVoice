@@ -28,12 +28,6 @@ import time
 
 import tkinter, tkinter.filedialog, tkinter.messagebox
 
-try:
-    import gettext
-    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
-except:
-    _ = lambda s: s
-
 #
 #  Original Parser
 #
@@ -41,12 +35,12 @@ class MyParser(optparse.OptionParser):
     def _add_help_option (self):
         self.add_option("-h", "--help",
                         action="help",
-                        help=_("show this help message and exit"))
+                        help="show this help message and exit")
 
     def _add_version_option (self):
         self.add_option("--version",
                         action="version",
-                        help=_("show program's version number and exit"))
+                        help="show program's version number and exit")
 
     def format_epilog(self, formatter):
         if self.epilog is not None:
@@ -77,20 +71,20 @@ class MyParser(optparse.OptionParser):
 #
 #  Selector dialog for single file reading
 #
-def askopenfilename(_title=''):
+def askopenfilename(title=''):
     root = tkinter.Tk()
     root.withdraw()
     fTyp = [("","*")]
-    fname = tkinter.filedialog.askopenfilename(filetypes = fTyp, initialdir = "", title=_title)
+    fname = tkinter.filedialog.askopenfilename(filetypes = fTyp, initialdir = "", title=title)
     return fname
 #
 #  Selector dialog for multi-files reading
 #
-def askopenfilenames(_title=''):
+def askopenfilenames(title=''):
     root = tkinter.Tk()
     root.withdraw()
     fTyp = [("","*")]
-    fname = tkinter.filedialog.askopenfilenames(filetypes = fTyp, initialdir = "", title=_title)
+    fname = tkinter.filedialog.askopenfilenames(filetypes = fTyp, initialdir = "", title=title)
     return fname
 #
 #  Selector dialog for saving file
@@ -107,19 +101,19 @@ def asksaveasfile():
 def addmanageropts(parser):
     parser.add_option('-a', '--manager-service', dest='managerservice', action='store_true',
                       default=False,
-                      help=_('enable manager to be controlled as corba servant'))
+                      help='enable manager to be controlled as corba servant')
     parser.add_option('-f', '--config-file', dest='configfile', action='store',
                       default=None,
-                      help=_('specify custom configuration file'))
+                      help='specify custom configuration file')
     parser.add_option('-o', '--option', dest='option', action='append',
                       default=None,
-                      help=_('specify custom configuration parameter'))
+                      help='specify custom configuration parameter')
     parser.add_option('-p', '--port', dest='port', action='store',
                       default=None,
-                      help=_('specify custom corba endpoint'))
+                      help='specify custom corba endpoint')
     parser.add_option('-d', '--master-mode', dest='mastermode', action='store_true',
                       default=False,
-                      help=_('configure manager to be master'))
+                      help='configure manager to be master')
 #
 #  option definition for rtm_manager
 #
@@ -139,26 +133,4 @@ def genmanagerargs(opt):
         args.append(port)
     if opt.mastermode == True:
         args.append('-d')
-
-#
-#  Read file
-#
-def read_file_contents(fname):
-  try:
-    f=open(fname,'r')
-    contents = f.read()
-    f.close()
-    return contents
-  except:
-    return ""
-    
-#
-#  get current time
-#
-def getCurrentTime():
-  if platform.system() == 'Windows':
-    now = time.clock()
-  else:
-    now = time.time()
-  return now
 

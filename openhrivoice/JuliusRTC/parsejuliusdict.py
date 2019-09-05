@@ -19,7 +19,7 @@ Licensed under the Eclipse Public License -v 1.0 (EPL)
 http://www.opensource.org/licenses/eclipse-1.0.txt
 '''
 
-from string import maketrans
+#from string import maketrans
 import re
 
 #
@@ -43,7 +43,7 @@ class JuliusDict:
             if matchObj :
                 t = conv_encoding(matchObj.group())
                 t = t[1:-1]
-                #print t
+                #print (t)
                 ph = conv_encoding(l).rsplit(']')
                 if len(ph) > 1:
                     st = [ ' '+ph[1].strip() ]
@@ -80,10 +80,10 @@ if __name__ == '__main__':
     dic2 = "D:\\local\\Julius\\dictation-kit-v4.4\\model\\lang_m\\bccwj.60k.htkdic"
     dic3 = "/usr/share/julius-runkit/model/lang_m/web.60k.htkdic"
 
-    print dic1
+    print (dic1)
 
     doc = JuliusDict(dic2)
 
-    print doc.lookup(u'叔父')
-    print doc.lookup(u'こんにちは')
+    print (doc.lookup(u'叔父'))
+    print (doc.lookup(u'こんにちは'))
     

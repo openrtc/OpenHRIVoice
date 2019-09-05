@@ -142,8 +142,8 @@ if __name__ == '__main__':
     sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
     sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
     db = LexiconDB('test.db', __version__)
-    print ','.join(db.lookup('look'))
-    print ','.join(db.lookup('pizza'))
-    print ','.join(db.lookup(u'見'))
-    print ','.join(db.substringlookup(u'隣の客はよく柿食う客だ'))
+    print (','.join(db.lookup('look')))
+    print (','.join(db.lookup('pizza')))
+    print (','.join(db.lookup(u'見')))
+    print (','.join(db.substringlookup(u'隣の客はよく柿食う客だ')))
     

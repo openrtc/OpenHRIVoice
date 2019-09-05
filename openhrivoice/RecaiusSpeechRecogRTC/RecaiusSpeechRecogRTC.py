@@ -18,8 +18,6 @@ import time, struct, traceback, locale, codecs, getopt, wave, tempfile
 import optparse
 
 import json
-import urllib
-import urllib2
 
 from pydub import AudioSegment
 from pydub.silence import *
@@ -28,18 +26,11 @@ from xml.dom.minidom import Document
 
 import OpenRTM_aist
 import RTC
-from openhrivoice.__init__ import __version__
-from openhrivoice import utils
-from openhrivoice.config import config
+from __init__ import __version__
+import utils
 
-from openhrivoice.CloudSpeechRecogBase import CloudSpeechRecogBase
-from openhrivoice.RecaiusSpeechRecogRTC.recaius import RecaiusAsr
-
-try:
-    import gettext
-    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
-except:
-    _ = lambda s: s
+from CloudSpeechRecogBase import CloudSpeechRecogBase
+from recaius import RecaiusAsr
 
 
 __doc__ = _('Google Speech Recognition component.')
@@ -55,7 +46,6 @@ class RecaiusSpeechRecogWrap(CloudSpeechRecogBase):
     #
     def __init__(self, rtc, language='jp', ex_sec=600):
         CloudSpeechRecogBase.__init__(self, language)
-        self._config = config()
         self._service_id={}
         self._password=""
 
@@ -112,20 +102,20 @@ RecaiusSpeechRecogRTC_spec = ["implementation_id", "RecaiusSpeechRecogRTC",
                   "language",          "Python",
                   "lang_type",         "script",
 
-		  "conf.default.lang", "jp",
-		  "conf.__widget__.lang", "text",
+                  "conf.default.lang", "jp",
+                  "conf.__widget__.lang", "text",
                   "conf.__type__.lang", "string",
 
-		  "conf.default.min_buflen", "8000",
-		  "conf.__widget__.min_buflen", "text",
+                  "conf.default.min_buflen", "8000",
+                  "conf.__widget__.min_buflen", "text",
                   "conf.__type__.min_buflen", "int",
 
-		  "conf.default.min_silence", "200",
-		  "conf.__widget__.min_silence", "text",
+                  "conf.default.min_silence", "200",
+                  "conf.__widget__.min_silence", "text",
                   "conf.__type__.min_silence", "int",
 
-		  "conf.default.silence_thr", "-20",
-		  "conf.__widget__.silence_thr", "text",
+                  "conf.default.silence_thr", "-20",
+                  "conf.__widget__.silence_thr", "text",
                   "conf.__type__.silence_thr", "int",
 
                   ""]
@@ -157,7 +147,6 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def __init__(self, manager):
         OpenRTM_aist.DataFlowComponentBase.__init__(self, manager)
-        self._config = config()
         self._recog = None
         self._copyrights=[]
         self._lang = [ "ja-JP" ]
@@ -176,10 +165,10 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
         self._logger.RTC_INFO("Copyright (C) 2017 Isao Hara")
         #
         #
-	self.bindParameter("lang", self._lang, "jp")
-	self.bindParameter("min_silence", self._min_silence, "200")
-	self.bindParameter("silence_thr", self._silence_thr, "-20")
-	self.bindParameter("min_buflen", self._min_buflen, "8000")
+        self.bindParameter("lang", self._lang, "jp")
+        self.bindParameter("min_silence", self._min_silence, "200")
+        self.bindParameter("silence_thr", self._silence_thr, "-20")
+        self.bindParameter("min_buflen", self._min_buflen, "8000")
         #
         # create inport for audio stream
         self._indata = RTC.TimedOctetSeq(RTC.Time(0,0), None)
@@ -289,7 +278,7 @@ class RecaiusSpeechRecogRTC(OpenRTM_aist.DataFlowComponentBase):
                 listentext.setAttribute("state","Success")
 
             except:
-                print traceback.format_exc()
+                print (traceback.format_exc())
                 listentext.setAttribute("state","ParseError")
 
         res_data = doc.toxml(encoding="utf-8")
@@ -313,8 +302,8 @@ class RecaiusSpeechRecogManager:
 
         try:
             opts, args = parser.parse_args()
-        except optparse.OptionError, e:
-            print >>sys.stderr, 'OptionError:', e
+        except optparse.OptionError as e:
+            print  ('OptionError:', e, file=sys.stderr)
             sys.exit(1)
 
         self._comp = None

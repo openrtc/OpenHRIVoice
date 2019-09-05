@@ -34,13 +34,13 @@ import RTC
 from openhrivoice.__init__ import __version__
 from openhrivoice import utils
 from openhrivoice.config import config
-try:
-    import gettext
-    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
-except:
-    _ = lambda s: s
+#try:
+#    import gettext
+#    _ = gettext.translation(domain='openhrivoice', localedir=os.path.dirname(__file__)+'/../share/locale').ugettext
+#except:
+#    _ = lambda s: s
 
-__doc__ = _('Julius (English and Japanese) speech recognition component.')
+__doc__ = "Julius (English and Japanese) speech recognition component."
 
 '''
 Dictation-kit
@@ -125,8 +125,8 @@ class JuliusWrap(threading.Thread):
         if self._mode != "client" :
             self.setupSubprocess()
 
-            print "command line: %s" % " ".join(self._cmdline)
-            print self._cmdline
+            print ("command line: %s" % " ".join(self._cmdline))
+            print (self._cmdline)
             self._p = subprocess.Popen(self._cmdline)
 
         self._running = True
@@ -136,7 +136,7 @@ class JuliusWrap(threading.Thread):
         #
         #   Connect to Julius (try ten times)
         time.sleep(1)
-        print "connecting to ports"
+        print ("connecting to ports")
         for retry in range(0, 10):
             try:
                 self._modulesocket.connect((self._modulehost, self._moduleport))
@@ -157,7 +157,7 @@ class JuliusWrap(threading.Thread):
         if self._mode != 'dictation' :
             self._modulesocket.sendall("INPUTONCHANGE TERMINATE\n")
 
-        print "JuliusWrap started"
+        print ("JuliusWrap started")
 
     #
     # Parameter seting for Julius
@@ -305,7 +305,7 @@ class JuliusWrap(threading.Thread):
     #  Terminate (Call on Finished)
     #
     def terminate(self):
-        print 'JuliusWrap: terminate'
+        print ('JuliusWrap: terminate')
         self._running = False
         self.close_adinnet()
         self.close_julius()
@@ -337,11 +337,12 @@ class JuliusWrap(threading.Thread):
                     c(self.CB_LOGWAVE, f)
             try:
                 self._modulesocket.settimeout(1)
-                data = self._prevdata + unicode(self._modulesocket.recv(1024*10),  self._jcode)
+                #data = self._prevdata + unicode(self._modulesocket.recv(1024*10),  self._jcode)
+                data = self._prevdata + self._modulesocket.recv(1024*10).decode(self._jcode)
             except socket.timeout:
                 continue
             except socket.error:
-                print 'socket error'
+                print ('socket error')
                 break
 
             self._gotinput = True
@@ -358,7 +359,7 @@ class JuliusWrap(threading.Thread):
                   traceback.print_exc()
                   pass
 
-        print 'JuliusWrap: exit from event loop'
+        print ('JuliusWrap: exit from event loop')
 
     #
     #   Add grammer to Julius Server
@@ -381,9 +382,9 @@ class JuliusWrap(threading.Thread):
         try:
             gid = self._grammars[name]
         except KeyError:
-            print "[error] unknown grammar: %s" % (name,)
+            print ("[error] unknown grammar: %s" % (name,))
             return
-        print "ACTIVATEGRAM %s" % (name,)
+        print ("ACTIVATEGRAM %s" % (name,))
         self._modulesocket.sendall("ACTIVATEGRAM\n%s\n" % (name,))
         self._activegrammars[name] = True
         time.sleep(0.1)
@@ -395,9 +396,9 @@ class JuliusWrap(threading.Thread):
         try:
             gid = self._grammars[name]
         except KeyError:
-            print "[error] unknown grammar: %s" % (name,)
+            print ("[error] unknown grammar: %s" % (name,))
             return
-        print "DEACTIVATEGRAM %s" % (name,)
+        print ("DEACTIVATEGRAM %s" % (name,))
         self._modulesocket.sendall("DEACTIVATEGRAM\n%s\n" % (name,))
         del self._activegrammars[name]
         time.sleep(0.1)
@@ -428,7 +429,7 @@ class JuliusWrap(threading.Thread):
 #
 JuliusRTC_spec = ["implementation_id", "JuliusRTC",
                   "type_name",         "JuliusRTC",
-                  "description",       __doc__.encode('UTF-8'),
+                  "description",       __doc__,
                   "version",           __version__,
                   "vendor",            "AIST",
                   "category",          "communication",
@@ -437,15 +438,15 @@ JuliusRTC_spec = ["implementation_id", "JuliusRTC",
                   "language",          "Python",
                   "lang_type",         "script",
                   "conf.default.language", "japanese",
-                  "conf.__descirption__.language", _("Specify target language.").encode('UTF-8'),
+                  "conf.__descirption__.language", "Specify target language.",
                   "conf.__widget__.language", "radio",
                   "conf.__constraints__.language", "(japanese, english, german)",
                   "conf.default.phonemodel", "male",
-                  "conf.__descirption__.phonemodel", _("Specify acoustic model (fixed to male)").encode('UTF-8'),
+                  "conf.__descirption__.phonemodel", "Specify acoustic model (fixed to male)",
                   "conf.__widget__.phonemodel", "radio",
                   "conf.__constraints__.phonemodel", "(male)",
                   "conf.default.voiceactivitydetection", "internal",
-                  "conf.__descirption__.voiceactivitydetection", _("Specify voice activity detection trigger (fixed to internal).").encode('UTF-8'),
+                  "conf.__descirption__.voiceactivitydetection", "Specify voice activity detection trigger (fixed to internal).",
                   "conf.__widget__.voiceactivitydetection", "radio",
                   "conf.__constraints__.voiceactivitydetection", "(internal)",
                   "conf.default.jconf_file", "main.jconf",
@@ -504,7 +505,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         # create inport for audio stream
         self._indata = RTC.TimedOctetSeq(RTC.Time(0,0), None)
         self._inport = OpenRTM_aist.InPort("data", self._indata)
-        self._inport.appendProperty('description', _('Audio data (in packets) to be recognized.').encode('UTF-8'))
+        self._inport.appendProperty('description', 'Audio data (in packets) to be recognized.')
         self._inport.addConnectorDataListener(OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
                                               DataListener("data", self, RTC.TimedOctetSeq))
         self.registerInPort(self._inport._name, self._inport)
@@ -513,7 +514,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         # create inport for active grammar
         self._grammardata = RTC.TimedString(RTC.Time(0,0), "")
         self._grammarport = OpenRTM_aist.InPort("activegrammar", self._grammardata)
-        self._grammarport.appendProperty('description', _('Grammar ID to be activated.').encode('UTF-8'))
+        self._grammarport.appendProperty('description', 'Grammar ID to be activated.')
         self._grammarport.addConnectorDataListener(OpenRTM_aist.ConnectorDataListenerType.ON_BUFFER_WRITE,
                                                    DataListener("activegrammar", self, RTC.TimedString))
         self.registerInPort(self._grammarport._name, self._grammarport)
@@ -523,21 +524,21 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
         self._statusdata = RTC.TimedString(RTC.Time(0,0), "")
         self._statusport = OpenRTM_aist.OutPort("status", self._statusdata)
         self._statusport.appendProperty('description',
-                                        _('Status of the recognizer (one of "LISTEN [accepting speech]", "STARTREC [start recognition process]", "ENDREC [end recognition process]", "REJECTED [rejected speech input]")').encode('UTF-8'))
+                                        'Status of the recognizer (one of "LISTEN [accepting speech]", "STARTREC [start recognition process]", "ENDREC [end recognition process]", "REJECTED [rejected speech input]")')
         self.registerOutPort(self._statusport._name, self._statusport)
 
         #
         # create outport for result
         self._outdata = RTC.TimedString(RTC.Time(0,0), "")
         self._outport = OpenRTM_aist.OutPort("result", self._outdata)
-        self._outport.appendProperty('description', _('Recognition result in XML format.').encode('UTF-8'))
+        self._outport.appendProperty('description', 'Recognition result in XML format.')
         self.registerOutPort(self._outport._name, self._outport)
 
         #
         # create outport for log
         self._logdata = RTC.TimedOctetSeq(RTC.Time(0,0), None)
         self._logport = OpenRTM_aist.OutPort("log", self._logdata)
-        self._logport.appendProperty('description', _('Log of audio data.').encode('UTF-8'))
+        self._logport.appendProperty('description', 'Log of audio data.')
         self.registerOutPort(self._logport._name, self._logport)
 
         #
@@ -590,7 +591,7 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
                 if gram == "":
                     return RTC.RTC_ERROR
                 self._logger.RTC_INFO("register grammar: %s" % (r,))
-                print gram
+                print (gram)
                 self._j.addgrammar(gram, r)
             self._j.switchgrammar(self._srgs._rootrule)
 
@@ -698,9 +699,9 @@ class JuliusRTC(OpenRTM_aist.DataFlowComponentBase):
     #
     def setgrammarfile(self, gram, rebuid=False):
         self._grammer = gram
-        print "compiling grammar: %s" % (gram,)
+        print ("compiling grammar: %s" % (gram,))
         self._srgs = SRGS(gram, self._properties, rebuid)
-        print "done"
+        print ("done")
 
 #
 #  JuliusRTCManager Class
@@ -711,27 +712,28 @@ class JuliusRTCManager:
     #
     def __init__(self):
         encoding = locale.getpreferredencoding()
-        sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
-        sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
+        #sys.stdout = codecs.getwriter(encoding)(sys.stdout, errors = "replace")
+        #sys.stderr = codecs.getwriter(encoding)(sys.stderr, errors = "replace")
 
         parser = utils.MyParser(version=__version__, usage="%prog [srgsfile]",
                                 description=__doc__)
         utils.addmanageropts(parser)
         parser.add_option('-g', '--gui', dest='guimode', action="store_true",
                           default=False,
-                          help=_('show file open dialog in GUI'))
+                          help='show file open dialog in GUI')
 
         parser.add_option('-D', '--dictation', dest='dictation_mode', action="store_true",
                           default=False,
-                          help=_('run with dictation mode'))
+                          help='run with dictation mode')
 
         parser.add_option('-r', '--rebuild-lexicon', dest='rebuild_lexicon', action="store_true",
                           default=False,
-                          help=_('rebuild lexicon'))
+                          help='rebuild lexicon')
         try:
             opts, args = parser.parse_args()
-        except optparse.OptionError, e:
-            print >>sys.stderr, 'OptionError:', e
+        except optparse.OptionError as e:
+            #print >>sys.stderr, 'OptionError:', e
+            print('OptionError:', e , file=sys.stderr)
             sys.exit(1)
 
         if opts.guimode == True:

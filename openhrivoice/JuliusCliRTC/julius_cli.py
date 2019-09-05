@@ -7,7 +7,7 @@ import optparse
 
 import json
 import urllib
-import urllib2
+import urllib.request, urllib.error
 
 import glob
 
@@ -22,7 +22,7 @@ class JuliusCli():
         self.setServer(host, port)
         self._lang = "jaJP"
         self._apikey=""
-        print self._endpoint
+        print (self._endpoint)
 
     #
     #  Set JuliusServer
@@ -44,13 +44,13 @@ class JuliusCli():
         voice_data = str(bytearray(data))
 
         try:
-            request = urllib2.Request(url, data=voice_data, headers=headers)
-            result = urllib2.urlopen(request)
+            request = urllib.request.Request(url, data=voice_data, headers=headers)
+            result = urllib.urlopen(request)
             response = result.read()
             return response.decode('utf-8').split()
         except:
-            print url
-            print traceback.format_exc()
+            print (url)
+            print (traceback.format_exc())
             return ["Error"]
 
 def getWavData(fname):
@@ -71,14 +71,15 @@ def show_result(result):
       for x in res['result'] :
         i += 1
         if 'confidence' in x :
-            print "#"+str(i)+":"+x['str']+"("+str(x['confidence'])+")"
+            print ("#"+str(i)+":"+x['str']+"("+str(x['confidence'])+")")
         else :
-            print "#"+str(i)+":"+x['str']
+            print ("#"+str(i)+":"+x['str'])
 
     except:
-      print result
+      print( result)
       pass
-    print "\n"
+    print( "\n")
+
 
 def main():
   rec = JuliusCli()
@@ -87,12 +88,12 @@ def main():
   files.sort()
 
   for f in files:
-    print f
+    print( f)
     data = getWavData(f)
     result=rec.request_asr(data)
     show_result(''.join(result) )
-    print "\n"
-
+    print( "\n"
+)
 #
 #  Main
 #
